@@ -21,7 +21,7 @@ from scipy import misc, ndimage, signal, sparse, io
 import scipy.ndimage
 import cv2
 import sys,os
-sys.path.append(os.path.realpath('../FineNet'))
+sys.path.append(os.path.realpath('../MinutiaeNet/FineNet'))
 from FineNet_model import FineNetmodel
 
 from keras.models import Model
