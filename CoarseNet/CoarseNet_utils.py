@@ -371,11 +371,11 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None, max_size=None):
     img_name, folder_name, img_size = [], [], []
 
     for folder, rate in zip(dataset, sample_rate):
-        _, img_name_t = get_files_in_folder(folder, 'img_files/*'+'.bmp')
+        _, img_name_t = get_files_in_folder(folder, 'img_files/*'+'.png')
         img_name.extend(img_name_t.tolist()*rate)
         folder_name.extend([folder]*img_name_t.shape[0]*rate)
 
-        img_size.append(np.array(misc.imread(folder + 'img_files/' + img_name_t[0] + '.bmp', mode='L').shape))
+        img_size.append(np.array(misc.imread(folder + 'img_files/' + img_name_t[0] + '.png', mode='L').shape))
 
     img_name = np.asarray(img_name)
     folder_name = np.asarray(folder_name)
