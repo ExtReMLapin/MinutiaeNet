@@ -1,4 +1,4 @@
-import os
+import os, sys
 
 import glob
 import shutil
@@ -9,6 +9,10 @@ from scipy import ndimage, misc, signal, spatial
 from skimage.filters import gaussian
 import cv2
 import math
+
+sys.path.append(os.path.realpath('../../ClassifyNet'))
+
+from ClassifyNet_utils import getMinutiaeTypeFromId, setMinutiaePlotColor
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -244,14 +248,20 @@ def draw_minutiae(image, minutiae, fname, saveimage= False, r=15, drawScore=Fals
     image = np.squeeze(image)
     fig = plt.figure()
     
-
     plt.imshow(image,cmap='gray')
     plt.hold(True)
     # Check if no minutiae
     if minutiae.shape[0] > 0:
-        plt.plot(minutiae[:, 0], minutiae[:, 1], 'rs', fillstyle='none', linewidth=1)
-        for x, y, o, s in minutiae:
-            plt.plot([x, x+r*np.cos(o)], [y, y+r*np.sin(o)], 'r-')
+        #plt.plot(minutiae[:, 0], minutiae[:, 1], 'rs', fillstyle='none', linewidth=1)
+        for minutiaeData in minutiae:
+            x = minutiaeData[0]
+            y = minutiaeData[1]
+            o = minutiaeData[2]
+            s = minutiaeData[3]
+            minutiaeType = getMinutiaeTypeFromId(minutiaeData[4])
+            
+            plt.plot(x, y, setMinutiaePlotColor(minutiaeType)+'s', fillstyle='none', linewidth=1)
+            plt.plot([x, x+r*np.cos(o)], [y, y+r*np.sin(o)], setMinutiaePlotColor(minutiaeType)+'-')
             if drawScore == True:
                 plt.text(x - 10, y - 10, '%.2f' % s, color='yellow', fontsize=4)
 

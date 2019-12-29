@@ -282,13 +282,14 @@ def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=0.5):
     mnt_w_out = np.squeeze(mnt_w_out)
     mnt_h_out = np.squeeze(mnt_h_out)
     mnt_o_out = np.squeeze(mnt_o_out)
+    mnt_type_out = np.squeeze(0)
     assert len(mnt_s_out.shape)==2 and len(mnt_w_out.shape)==3 and len(mnt_h_out.shape)==3 and len(mnt_o_out.shape)==3
 
     # get cls results
     mnt_sparse = sparse.coo_matrix(mnt_s_out>thresh)
     mnt_list = np.array(zip(mnt_sparse.row, mnt_sparse.col), dtype=np.int32)
     if mnt_list.shape[0] == 0:
-        return np.zeros((0, 4))
+        return np.zeros((0, 5))
 
     # get regression results
     mnt_w_out = np.argmax(mnt_w_out, axis=-1)
@@ -296,7 +297,7 @@ def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=0.5):
     mnt_o_out = np.argmax(mnt_o_out, axis=-1) # TODO: use ori_highest_peak(np version)
 
     # get final mnt
-    mnt_final = np.zeros((len(mnt_list), 4))
+    mnt_final = np.zeros((len(mnt_list), 5))
     mnt_final[:, 0] = mnt_sparse.col*8 + mnt_w_out[mnt_list[:,0], mnt_list[:,1]]
     mnt_final[:, 1] = mnt_sparse.row*8 + mnt_h_out[mnt_list[:,0], mnt_list[:,1]]
     mnt_final[:, 2] = (mnt_o_out[mnt_list[:,0], mnt_list[:,1]]*2-89.)/180*np.pi
@@ -304,6 +305,7 @@ def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=0.5):
     # New one
     mnt_final[:, 2] = (-mnt_final[:, 2]) % (2*np.pi)
     mnt_final[:, 3] = mnt_s_out[mnt_list[:,0], mnt_list[:, 1]]
+    mnt_final[:, 4] = mnt_type_out
 
     return mnt_final
 
