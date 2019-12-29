@@ -282,7 +282,6 @@ def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=0.5):
     mnt_w_out = np.squeeze(mnt_w_out)
     mnt_h_out = np.squeeze(mnt_h_out)
     mnt_o_out = np.squeeze(mnt_o_out)
-    mnt_type_out = np.squeeze(0)
     assert len(mnt_s_out.shape)==2 and len(mnt_w_out.shape)==3 and len(mnt_h_out.shape)==3 and len(mnt_o_out.shape)==3
 
     # get cls results
@@ -305,7 +304,7 @@ def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=0.5):
     # New one
     mnt_final[:, 2] = (-mnt_final[:, 2]) % (2*np.pi)
     mnt_final[:, 3] = mnt_s_out[mnt_list[:,0], mnt_list[:, 1]]
-    mnt_final[:, 4] = mnt_type_out
+    mnt_final[:, 4] = None
 
     return mnt_final
 
