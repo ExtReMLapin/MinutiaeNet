@@ -17,7 +17,7 @@ from __future__ import division
 from keras.models import Model
 from keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D
 from keras.layers import Input, Lambda, MaxPooling2D
-from keras.applications.imagenet_utils import _obtain_input_shape
+from keras_applications.imagenet_utils import _obtain_input_shape
 from keras import backend as K
 import matplotlib.pyplot as plt
 import numpy as np
