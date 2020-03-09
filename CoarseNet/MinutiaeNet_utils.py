@@ -12,7 +12,7 @@ import math
 
 sys.path.append(os.path.realpath('../../ClassifyNet'))
 
-# from ClassifyNet_utils import getMinutiaeTypeFromId, setMinutiaePlotColor
+from ClassifyNet_utils import getMinutiaeTypeFromId, setMinutiaePlotColor
 
 def mkdir(path):
     if not os.path.exists(path):
@@ -257,10 +257,11 @@ def draw_minutiae(image, minutiae, fname, saveimage= False, r=15, drawScore=Fals
             y = minutiaeData[1]
             o = minutiaeData[2]
             s = minutiaeData[3]
-            #minutiaeType = getMinutiaeTypeFromId(minutiaeData[4])
+            minutiae_type = getMinutiaeTypeFromId(minutiaeData[4])
+            minutiae_color = setMinutiaePlotColor(minutiae_type)
             
-            plt.plot(x, y, 'rs', fillstyle='none', linewidth=1)
-            plt.plot([x, x+r*np.cos(o)], [y, y+r*np.sin(o)], 'r-')
+            plt.plot(x, y, minutiae_color+'s', fillstyle='none', linewidth=1)
+            plt.plot([x, x+r*np.cos(o)], [y, y+r*np.sin(o)], minutiae_color+'-')
             if drawScore == True:
                 plt.text(x - 10, y - 10, '%.2f' % s, color='yellow', fontsize=4)
 
