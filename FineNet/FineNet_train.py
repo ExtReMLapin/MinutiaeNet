@@ -12,13 +12,12 @@
 """
 
 import sys,os
-sys.path.append(os.path.realpath('../FineNet'))
 
 from keras.optimizers import Adam
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, TensorBoard
 from keras.callbacks import ReduceLROnPlateau
 from keras.preprocessing.image import ImageDataGenerator
-from FineNet_model import FineNetmodel, plot_confusion_matrix
+from FineNet.FineNet_model import FineNetmodel, plot_confusion_matrix
 
 import numpy as np
 import os

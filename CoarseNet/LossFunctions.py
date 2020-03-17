@@ -20,7 +20,7 @@ from keras.layers import Input, Lambda, MaxPooling2D
 from keras_applications.imagenet_utils import _obtain_input_shape
 from keras import backend as K
 import numpy as np
-from CoarseNet_utils import *
+from MinutiaeClassificator.MinutiaeNet.CoarseNet.CoarseNet_utils import *
 
 def orientation_loss(y_true, y_pred, lamb=1.):
     # clip

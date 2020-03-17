@@ -16,13 +16,13 @@ from __future__ import division
 
 from time import time
 from datetime import datetime
-from CoarseNet_utils import *
+from MinutiaeClassificator.MinutiaeNet.CoarseNet.CoarseNet_utils import *
 from scipy import misc, ndimage, signal, sparse, io
 import scipy.ndimage
 import cv2
 import sys,os
-sys.path.append(os.path.realpath('../MinutiaeNet/FineNet'))
-from FineNet_model import FineNetmodel
+
+from MinutiaeClassificator.MinutiaeNet.FineNet.FineNet_model import FineNetmodel
 
 from keras.models import Model
 from keras.layers import Input
@@ -38,8 +38,8 @@ from keras.utils import plot_model
 
 import tensorflow as tf
 
-from MinutiaeNet_utils import *
-from LossFunctions import *
+from MinutiaeClassificator.MinutiaeNet.CoarseNet.MinutiaeNet_utils import *
+from MinutiaeClassificator.MinutiaeNet.CoarseNet.LossFunctions import *
 
 
 def conv_bn(bottom, w_size, name, strides=(1,1), dilation_rate=(1,1)):
