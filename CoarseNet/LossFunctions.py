@@ -14,13 +14,19 @@
 from __future__ import absolute_import
 from __future__ import division
 
+import sys
+import os
+
 from keras.models import Model
 from keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D
 from keras.layers import Input, Lambda, MaxPooling2D
 from keras_applications.imagenet_utils import _obtain_input_shape
 from keras import backend as K
 import numpy as np
-from MinutiaeClassificator.MinutiaeNet.CoarseNet.CoarseNet_utils import *
+
+sys.path.append(os.path.realpath('../MinutiaeClassificator/MinutiaeNet/CoarseNet/'))
+
+from CoarseNet_utils import *
 
 def orientation_loss(y_true, y_pred, lamb=1.):
     # clip

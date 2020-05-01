@@ -10,7 +10,9 @@ from skimage.filters import gaussian
 import cv2
 import math
 
-from MinutiaeClassificator.ClassifyNet.ClassifyNet_utils import getMinutiaeTypeFromId, setMinutiaePlotColor
+sys.path.append(os.path.abspath('../ClassifyNet'))
+
+from ClassifyNet.ClassifyNet_utils import getMinutiaeTypeFromId, setMinutiaePlotColor
 
 def mkdir(path):
     if not os.path.exists(path):
