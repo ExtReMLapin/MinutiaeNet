@@ -11,8 +11,8 @@
     }
 """
 
-from __future__ import absolute_import
-from __future__ import division
+
+
 
 from keras.models import Model
 from keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D

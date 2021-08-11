@@ -11,8 +11,8 @@
     }
 """
 
-from __future__ import absolute_import
-from __future__ import division
+
+
 
 from time import time
 from datetime import datetime
@@ -612,7 +612,7 @@ def deploy_with_GT(deploy_set, output_dir, model_path, FineNet_path=None, set_na
     for i, test in enumerate(
             load_data((img_name, folder_name, img_size), tra_ori_model, rand=False, aug=0.0, batch_size=1)):
 
-        print i, img_name[i]
+        print((i, img_name[i]))
         logging.info("%s %d / %d: %s" % (set_name, i + 1, len(img_name), img_name[i]))
         time_start = time()
 
@@ -747,11 +747,11 @@ def deploy_with_GT(deploy_set, output_dir, model_path, FineNet_path=None, set_na
         # Metrics calculating
         p, r, f, l, o = metric_P_R_F(mnt_gt, mnt_nms)
         ave_prf_nms.append([p, r, f, l, o])
-        print p,r,f
+        print((p,r,f))
 
     time_c = np.mean(np.array(time_c), axis=0)
     ave_prf_nms = np.mean(np.array(ave_prf_nms), 0)
-    print "Precision: %f\tRecall: %f\tF1-measure: %f" % (ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2])
+    print(("Precision: %f\tRecall: %f\tF1-measure: %f" % (ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2])))
 
     logging.info(
         "Average: load+conv: %.3fs, oir-select+seg-post+nms: %.3f, draw: %.3f" % (time_c[0], time_c[1], time_c[2]))
@@ -770,7 +770,7 @@ def inference(deploy_set, output_dir, model_path, FineNet_path=None, set_name=No
     logging.info("Predicting %s:" % (set_name))
 
     _, img_name = get_files_in_folder(deploy_set+ 'img_files/', file_ext)
-    print deploy_set
+    print(deploy_set)
 
     # ====== Load FineNet to verify
     if isHavingFineNet == True:
@@ -786,8 +786,8 @@ def inference(deploy_set, output_dir, model_path, FineNet_path=None, set_name=No
 
     main_net_model = CoarseNetmodel((None, None, 1), model_path, mode='deploy')
 
-    for i in xrange(0, len(img_name)):
-        print i
+    for i in range(0, len(img_name)):
+        print(i)
 
         image = misc.imread(deploy_set + 'img_files/'+ img_name[i] + file_ext, mode='L')  # / 255.0
 
@@ -872,7 +872,7 @@ def inference(deploy_set, output_dir, model_path, FineNet_path=None, set_name=No
 
         final_minutiae_score_threashold = early_minutiae_thres - 0.05
 
-        print early_minutiae_thres, final_minutiae_score_threashold
+        print((early_minutiae_thres, final_minutiae_score_threashold))
 
         mnt_refined = []
         if isHavingFineNet == True:

@@ -23,6 +23,7 @@ from keras.models import Model
 from keras.layers import Input
 from keras.layers.core import Lambda
 import tensorflow as tf
+from functools import reduce
 
 def sub_load_data(data, img_size, aug):
     img_name, dataset = data
@@ -97,7 +98,7 @@ def load_data(dataset, tra_ori_model, rand=False, aug=0.0, batch_size=1, sample_
 
     p_sub_load_data = partial(sub_load_data, img_size=img_size, aug=aug)
 
-    for i in xrange(0,len(img_name), batch_size):
+    for i in range(0,len(img_name), batch_size):
         have_alignment = np.ones([batch_size, 1, 1, 1])
         image = np.zeros((batch_size, img_size[0], img_size[1], 1))
         segment = np.zeros((batch_size, img_size[0], img_size[1], 1))
@@ -107,15 +108,15 @@ def load_data(dataset, tra_ori_model, rand=False, aug=0.0, batch_size=1, sample_
         minutiae_h = np.zeros((batch_size, img_size[0]/8, img_size[1]/8, 1))-1
         minutiae_o = np.zeros((batch_size, img_size[0]/8, img_size[1]/8, 1))-1
 
-        batch_name = [img_name[(i+j)%len(img_name)] for j in xrange(batch_size)]
-        batch_f_name = [folder_name[(i+j)%len(img_name)] for j in xrange(batch_size)]
+        batch_name = [img_name[(i+j)%len(img_name)] for j in range(batch_size)]
+        batch_f_name = [folder_name[(i+j)%len(img_name)] for j in range(batch_size)]
 
         if batch_size > 1 and use_multiprocessing==True:
-            results = p.map(p_sub_load_data, zip(batch_name, batch_f_name))
+            results = p.map(p_sub_load_data, list(zip(batch_name, batch_f_name)))
         else:
-            results = map(p_sub_load_data, zip(batch_name, batch_f_name))
+            results = list(map(p_sub_load_data, list(zip(batch_name, batch_f_name))))
 
-        for j in xrange(batch_size):
+        for j in range(batch_size):
             img, seg, ali, mnt = results[j]
             if np.sum(ali) == 0:
                 have_alignment[j, 0, 0, 0] = 0
@@ -286,7 +287,7 @@ def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=0.5):
 
     # get cls results
     mnt_sparse = sparse.coo_matrix(mnt_s_out>thresh)
-    mnt_list = np.array(zip(mnt_sparse.row, mnt_sparse.col), dtype=np.int32)
+    mnt_list = np.array(list(zip(mnt_sparse.row, mnt_sparse.col)), dtype=np.int32)
     if mnt_list.shape[0] == 0:
         return np.zeros((0, 5))
 
@@ -365,7 +366,7 @@ tra_ori_model = get_tra_ori()
 
 def get_maximum_img_size_and_names(dataset, sample_rate=None, max_size=None):
 
-    if isinstance(dataset, basestring):
+    if isinstance(dataset, str):
         dataset = [dataset]
     if sample_rate is None:
         sample_rate = [1]*len(dataset)

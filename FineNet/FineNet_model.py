@@ -11,8 +11,8 @@
     }
 """
 
-from __future__ import absolute_import
-from __future__ import division
+
+
 
 from keras.models import Model
 from keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D
@@ -204,7 +204,7 @@ def FineNetmodel(num_classes = 2, pretrained_path = None, input_shape = None):
 
     # Load weights
     if pretrained_path != None:
-        print 'Loading FineNet weights from %s'%(pretrained_path)
+        print('Loading FineNet weights from %s'%(pretrained_path))
         model.load_weights(pretrained_path)
 
     return model
@@ -233,7 +233,7 @@ def plot_confusion_matrix(cm, classes,
     print(cm)
 
     thresh = cm.max() / 2.
-    for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+    for i, j in itertools.product(list(range(cm.shape[0])), list(range(cm.shape[1]))):
         plt.text(j, i, cm[i, j],
                  horizontalalignment="center",
                  color="white" if cm[i, j] > thresh else "black")

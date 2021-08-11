@@ -100,7 +100,7 @@ def lr_schedule(epoch):
         lr *= 5e-2
     elif epoch > 30:
         lr *= 5e-1
-    print('Learning rate: ', lr)
+    print(('Learning rate: ', lr))
     return lr
 
 
@@ -163,7 +163,7 @@ model.fit_generator(train_batches,
 
 # Plot confusion matrix
 score = model.evaluate_generator(test_batches)
-print 'Test accuracy:', score[1]
+print('Test accuracy:', score[1])
 predictions = model.predict_generator(test_batches)
 test_labels = test_batches.classes[test_batches.index_array]
 
