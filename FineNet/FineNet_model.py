@@ -12,16 +12,15 @@
 """
 
 
-
-
-from keras.models import Model
-from keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D
-from keras.layers import Input, Lambda, MaxPooling2D
-from keras.applications.imagenet_utils import _obtain_input_shape
-from keras import backend as K
+from tensorflow.keras.models import Model
+from tensorflow.keras.layers import Activation, AveragePooling2D, BatchNormalization, Concatenate, Conv2D, Dense, GlobalAveragePooling2D
+from tensorflow.keras.layers import Input, Lambda, MaxPooling2D
+from keras_applications.imagenet_utils import _obtain_input_shape
+from tensorflow.keras import backend as K
 import matplotlib.pyplot as plt
 import numpy as np
 import itertools
+
 
 def preprocess_input(x):
     """Preprocesses a numpy array encoding a batch of images.
@@ -104,7 +103,8 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
         x = Activation(activation, name=block_name + '_ac')(x)
     return x
 
-def FineNetmodel(num_classes = 2, pretrained_path = None, input_shape = None):
+
+def FineNetmodel(num_classes=2, pretrained_path=None, input_shape=None):
     """Create FineNet architecture.
 
     """
@@ -116,7 +116,6 @@ def FineNetmodel(num_classes = 2, pretrained_path = None, input_shape = None):
         data_format=K.image_data_format(),
         require_flatten=False,
         weights=pretrained_path)
-
 
     img_input = Input(shape=input_shape)
 
@@ -196,7 +195,6 @@ def FineNetmodel(num_classes = 2, pretrained_path = None, input_shape = None):
     x = GlobalAveragePooling2D(name='avg_pool')(x)
     x = Dense(num_classes, activation='softmax', name='predictions')(x)
 
-
     inputs = img_input
 
     # Create model
@@ -204,10 +202,11 @@ def FineNetmodel(num_classes = 2, pretrained_path = None, input_shape = None):
 
     # Load weights
     if pretrained_path != None:
-        print('Loading FineNet weights from %s'%(pretrained_path))
+        print('Loading FineNet weights from %s' % (pretrained_path))
         model.load_weights(pretrained_path)
 
     return model
+
 
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
