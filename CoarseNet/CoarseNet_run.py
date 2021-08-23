@@ -12,18 +12,13 @@
 """
 
 
-
-
+from CoarseNet_model import *
+from CoarseNet_utils import *
+from MinutiaeNet_utils import *
+from keras import backend as K
+from datetime import datetime
 import os
 os.environ['KERAS_BACKEND'] = 'tensorflow'
-
-from datetime import datetime
-from keras import backend as K
-
-from MinutiaeNet_utils import *
-from CoarseNet_utils import *
-from CoarseNet_model import *
-
 
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
@@ -36,8 +31,8 @@ K.set_session(sess)
 mode = 'deploy'
 
 # Can use multiple folders for deploy, inference
-deploy_set = ['../Dataset/CoarseNet_train/',]
-inference_set = ['../Dataset/CoarseNet_test/',]
+deploy_set = ['../Dataset/CoarseNet_train/', ]
+inference_set = ['../Dataset/CoarseNet_test/', ]
 
 
 pretrain_dir = '../Models/CoarseNet.h5'
@@ -45,21 +40,24 @@ output_dir = '../output_CoarseNet/'+datetime.now().strftime('%Y%m%d-%H%M%S')
 
 FineNet_dir = '../Models/FineNet.h5'
 
+
 def main():
     if mode == 'deploy':
-        output_dir = '../output_CoarseNet/deployResults/' +datetime.now().strftime('%Y%m%d-%H%M%S')
+        output_dir = '../output_CoarseNet/deployResults/' + datetime.now().strftime('%Y%m%d-%H%M%S')
         logging = init_log(output_dir)
         for i, folder in enumerate(deploy_set):
-            deploy_with_GT(folder, output_dir=output_dir, model_path=pretrain_dir, FineNet_path=FineNet_dir)
+            deploy_with_GT(folder, output_dir=output_dir,
+                           model_path=pretrain_dir, FineNet_path=FineNet_dir)
             # evaluate_training(model_dir=pretrain_dir, test_set=folder, logging=logging)
     elif mode == 'inference':
-        output_dir = '../output_CoarseNet/inferenceResults/' +datetime.now().strftime('%Y%m%d-%H%M%S')
+        output_dir = '../output_CoarseNet/inferenceResults/' + datetime.now().strftime('%Y%m%d-%H%M%S')
         logging = init_log(output_dir)
         for i, folder in enumerate(inference_set):
-            inference(folder, output_dir=output_dir, model_path=pretrain_dir, FineNet_path=FineNet_dir, file_ext='.bmp',
-                      isHavingFineNet=False)
+            inference(folder, output_dir=output_dir, model_path=pretrain_dir,
+                      FineNet_path=FineNet_dir, file_ext='.bmp', isHavingFineNet=False)
     else:
         pass
 
-if __name__ =='__main__':
+
+if __name__ == '__main__':
     main()

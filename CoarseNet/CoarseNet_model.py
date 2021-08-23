@@ -19,12 +19,13 @@ import numpy as np
 # from time import time
 # from datetime import datetime
 # from scipy import misc, ndimage, signal, sparse, io
-from tensorflow.keras.layers import Flatten, Activation, Lambda, Dropout, Conv2D, MaxPooling2D, UpSampling2D, AveragePooling2D, PReLU, BatchNormalization
+from tensorflow.keras.layers import (
+    Flatten, Activation, Lambda, Dropout, Conv2D, MaxPooling2D, UpSampling2D, AveragePooling2D,
+    PReLU, BatchNormalization, Input)
 # from tensorflow.keras.utils import plot_model
 # from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.regularizers import l2
 from tensorflow.keras import layers
-from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 
 # from .LossFunctions import *
@@ -56,10 +57,10 @@ def conv_bn_prelu(bottom, w_size, name, strides=(1, 1), dilation_rate=(1, 1)):
                  padding='same',
                  strides=strides,
                  dilation_rate=dilation_rate,
-                 name=conv_type+name)(bottom)
-    top = BatchNormalization(name='bn-'+name)(top)
+                 name=conv_type + name)(bottom)
+    top = BatchNormalization(name='bn-' + name)(top)
     top = PReLU(alpha_initializer='zero', shared_axes=[
-                1, 2], name='prelu-'+name)(top)
+                1, 2], name='prelu-' + name)(top)
     # top = Dropout(0.25)(top)
     return top
 
@@ -67,7 +68,8 @@ def conv_bn_prelu(bottom, w_size, name, strides=(1, 1), dilation_rate=(1, 1)):
 def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
     # Change network architecture here!!
     img_input = Input(input_shape)
-    bn_img = Lambda(CoarseNet_utils.img_normalization, name='img_normalized')(img_input)
+    bn_img = Lambda(CoarseNet_utils.img_normalization,
+                    name='img_normalized')(img_input)
 
     # Main part
     conv = conv_bn_prelu(bn_img, (64, 5, 5), '1_0')
@@ -153,28 +155,33 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
     # enhance part
     filters_cos, filters_sin = MinutiaeNet_utils.gabor_bank(stride=2, Lambda=8)
 
-    filter_img_real = Conv2D(filters_cos.shape[3], (filters_cos.shape[0], filters_cos.shape[1]),
-                             weights=[filters_cos, np.zeros([filters_cos.shape[3]])], padding='same',
-                             name='enh_img_real_1')(img_input)
+    filter_img_real = Conv2D(filters_cos.shape[3], (filters_cos.shape[0], filters_cos.shape[1]), weights=[
+                             filters_cos, np.zeros([filters_cos.shape[3]])], padding='same', name='enh_img_real_1')(img_input)
     filter_img_imag = Conv2D(filters_sin.shape[3], (filters_sin.shape[0], filters_sin.shape[1]),
                              weights=[filters_sin, np.zeros([filters_sin.shape[3]])], padding='same',
                              name='enh_img_imag_1')(img_input)
 
     ori_peak = Lambda(CoarseNet_utils.ori_highest_peak)(ori_out_1)
-    ori_peak = Lambda(CoarseNet_utils.select_max)(ori_peak)  # select max ori and set it to 1
+    ori_peak = Lambda(CoarseNet_utils.select_max)(
+        ori_peak)  # select max ori and set it to 1
 
     # Use this function to upsample image
     upsample_ori = UpSampling2D(size=(8, 8))(ori_peak)
     seg_round = Activation('softsign')(seg_out)
 
     upsample_seg = UpSampling2D(size=(8, 8))(seg_round)
-    mul_mask_real = Lambda(CoarseNet_utils.merge_mul)([filter_img_real, upsample_ori])
+    mul_mask_real = Lambda(CoarseNet_utils.merge_mul)(
+        [filter_img_real, upsample_ori])
 
-    enh_img_real = Lambda(CoarseNet_utils.reduce_sum, name='enh_img_real_2')(mul_mask_real)
-    mul_mask_imag = Lambda(CoarseNet_utils.merge_mul)([filter_img_imag, upsample_ori])
+    enh_img_real = Lambda(CoarseNet_utils.reduce_sum,
+                          name='enh_img_real_2')(mul_mask_real)
+    mul_mask_imag = Lambda(CoarseNet_utils.merge_mul)(
+        [filter_img_imag, upsample_ori])
 
-    enh_img_imag = Lambda(CoarseNet_utils.reduce_sum, name='enh_img_imag_2')(mul_mask_imag)
-    enh_img = Lambda(CoarseNet_utils.atan2, name='phase_img')([enh_img_imag, enh_img_real])
+    enh_img_imag = Lambda(CoarseNet_utils.reduce_sum,
+                          name='enh_img_imag_2')(mul_mask_imag)
+    enh_img = Lambda(CoarseNet_utils.atan2, name='phase_img')(
+        [enh_img_imag, enh_img_real])
 
     enh_seg_img = Lambda(CoarseNet_utils.merge_concat, name='phase_seg_img')(
         [enh_img, upsample_seg])
@@ -237,110 +244,141 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
     mnt_s_out = Activation('sigmoid', name='mnt_s_out')(mnt_s_2)
 
     if mode == 'deploy':
-        model = Model(inputs=[img_input, ], outputs=[enh_img, enh_img_imag, enh_img_real,
-                      ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out])
+        model = Model(
+            inputs=[
+                img_input,
+            ],
+            outputs=[
+                enh_img,
+                enh_img_imag,
+                enh_img_real,
+                ori_out_1,
+                ori_out_2,
+                seg_out,
+                mnt_o_out,
+                mnt_w_out,
+                mnt_h_out,
+                mnt_s_out])
     else:
-        model = Model(inputs=[img_input, ], outputs=[
-                      ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out])
+        model = Model(
+            inputs=[
+                img_input,
+            ],
+            outputs=[
+                ori_out_1,
+                ori_out_2,
+                seg_out,
+                mnt_o_out,
+                mnt_w_out,
+                mnt_h_out,
+                mnt_s_out])
 
-    if weights_path != None:
+    if weights_path is not None:
         model.load_weights(weights_path, by_name=True)
     return model
 
 
-# def train(input_shape=(400, 400), train_set=None, output_dir='../output_CoarseNet/'+datetime.now().strftime('%Y%m%d-%H%M%S'),
-#           pretrain_dir=None, batch_size=1, test_set=None, learning_config=None, logging=None):
+def train(
+        input_shape=(400, 400),
+        train_set=None, output_dir='../output_CoarseNet/' + datetime.now().strftime('%Y%m%d-%H%M%S'),
+        pretrain_dir=None, batch_size=1, test_set=None, learning_config=None, logging=None):
 
-#     img_name, folder_name, img_size = get_maximum_img_size_and_names(
-#         train_set, None, max_size=input_shape)
+    img_name, folder_name, img_size = get_maximum_img_size_and_names(
+        train_set, None, max_size=input_shape)
 
-#     main_net_model = CoarseNetmodel(
-#         (img_size[0], img_size[1], 1), pretrain_dir, 'train')
-#     # Save model architecture
-#     plot_model(main_net_model, to_file=output_dir +
-#                '/model.png', show_shapes=True)
+    main_net_model = CoarseNetmodel(
+        (img_size[0], img_size[1], 1), pretrain_dir, 'train')
+    # Save model architecture
+    plot_model(main_net_model, to_file=output_dir +
+               '/model.png', show_shapes=True)
 
-#     main_net_model.compile(optimizer=learning_config,
-#                            loss={'seg_out': segmentation_loss,
-#                                  'mnt_o_out': orientation_output_loss, 'mnt_w_out': orientation_output_loss,
-#                                  'mnt_h_out': orientation_output_loss, 'mnt_s_out': minutiae_score_loss
-#                                  },
-#                            loss_weights={'seg_out': .5, 'mnt_w_out': .5,
-#                                          'mnt_h_out': .5, 'mnt_o_out': 100., 'mnt_s_out': 50.},
-#                            metrics={'seg_out': [seg_acc_pos, seg_acc_neg, seg_acc_all],
-#                                     'mnt_o_out': [mnt_acc_delta_10, ],
-#                                     'mnt_w_out': [mnt_mean_delta, ],
-#                                     'mnt_h_out': [mnt_mean_delta, ],
-#                                     'mnt_s_out': [seg_acc_pos, seg_acc_neg, seg_acc_all]})
+    main_net_model.compile(
+        optimizer=learning_config,
+        loss={'seg_out': segmentation_loss, 'mnt_o_out': orientation_output_loss,
+              'mnt_w_out': orientation_output_loss, 'mnt_h_out': orientation_output_loss,
+              'mnt_s_out': minutiae_score_loss},
+        loss_weights={'seg_out': .5, 'mnt_w_out': .5, 'mnt_h_out': .5, 'mnt_o_out': 100.,
+                      'mnt_s_out': 50.},
+        metrics={'seg_out': [seg_acc_pos, seg_acc_neg, seg_acc_all],
+                 'mnt_o_out': [mnt_acc_delta_10, ],
+                 'mnt_w_out': [mnt_mean_delta, ],
+                 'mnt_h_out': [mnt_mean_delta, ],
+                 'mnt_s_out': [seg_acc_pos, seg_acc_neg, seg_acc_all]})
 
-#     writer = tf.summary.FileWriter(output_dir)
+    writer = tf.summary.FileWriter(output_dir)
 
-#     Best_F1_result = 0
-#     Best_loss = 10000000
-#     for epoch in range(1000):
-#         outdir = "%s/saved_best_loss/" % (output_dir)
-#         mkdir(outdir)
+    Best_F1_result = 0
+    Best_loss = 10000000
+    for epoch in range(1000):
+        outdir = "%s/saved_best_loss/" % (output_dir)
+        mkdir(outdir)
 
-#         for i, train in enumerate(
-#             load_data(
-#                 (img_name, folder_name, img_size),
-#                 tra_ori_model, rand=True, aug=0.7, batch_size=batch_size)):
-#             loss = main_net_model.train_on_batch(train[0],
-#                                                  {'seg_out': train[3],
-#                                                   'mnt_w_out': train[4], 'mnt_h_out': train[5], 'mnt_o_out': train[6],
-#                                                   'mnt_s_out': train[7]
-#                                                   })
-#             # Save the lowest loss for easy converge
-#             if Best_loss > loss[0]:
-#                 savedir = "%s%s_%d_%s" % (outdir, str(epoch), i, str(loss[0]))
-#                 main_net_model.save_weights(savedir, True)
-#                 Best_loss = loss[0]
+        for i, train in enumerate(
+            load_data(
+                (img_name, folder_name, img_size),
+                tra_ori_model, rand=True, aug=0.7, batch_size=batch_size)):
+            loss = main_net_model.train_on_batch(
+                train[0],
+                {'seg_out': train[3],
+                 'mnt_w_out': train[4],
+                 'mnt_h_out': train[5],
+                 'mnt_o_out': train[6],
+                 'mnt_s_out': train[7]})
+            # Save the lowest loss for easy converge
+            if Best_loss > loss[0]:
+                savedir = "%s%s_%d_%s" % (outdir, str(epoch), i, str(loss[0]))
+                main_net_model.save_weights(savedir, True)
+                Best_loss = loss[0]
 
-#             # Write log on screen at every 20 epochs
-#             if i % (2/batch_size) == 0:
-#                 logging.info("epoch=%d, step=%d", epoch, i)
-#                 # Write details loss
-#                 logging.info("%s", " ".join(
-#                     ["%s:%.4f\t" % (x) for x in zip(main_net_model.metrics_names, loss)]))
-#                 # logging.info("Loss = %f    Best loss = %f",loss[0],Best_loss)
+            # Write log on screen at every 20 epochs
+            if i % (2/batch_size) == 0:
+                logging.info("epoch=%d, step=%d", epoch, i)
+                # Write details loss
+                logging.info("%s", " ".join(
+                    ["%s:%.4f\t" % (x) for x in zip(main_net_model.metrics_names, loss)]))
+                # logging.info("Loss = %f    Best loss = %f",loss[0],Best_loss)
 
-#                 # Show in tensorboard
-#                 for name, value in zip(main_net_model.metrics_names, loss):
-#                     summary = tf.Summary(
-#                         value=[tf.Summary.Value(tag=name, simple_value=value), ])
-#                     writer.add_summary(summary, i)
+#                 Show in tensorboard
+                for name, value in zip(main_net_model.metrics_names, loss):
+                    summary = tf.Summary(
+                        value=[tf.Summary.Value(tag=name, simple_value=value), ])
+                    writer.add_summary(summary, i)
 
-#         # Evaluate every 5 epoch: for faster training
-#         if epoch % 10 == 0:
-#             outdir = "%s/saved_models/" % (output_dir)
-#             mkdir(outdir)
-#             savedir = "%s%s" % (outdir, str(epoch))
-#             main_net_model.save_weights(savedir, True)
+        # Evaluate every 5 epoch: for faster training
+        if epoch % 10 == 0:
+            outdir = "%s/saved_models/" % (output_dir)
+            mkdir(outdir)
+            savedir = "%s%s" % (outdir, str(epoch))
+            main_net_model.save_weights(savedir, True)
 
-#             for folder in test_set:
-#                 precision_test, recall_test, F1_test, precision_test_location, recall_test_location, F1_test_location = evaluate_training(savedir, [
-#                                                                                                                                           folder, ], logging=logging)
+            for folder in test_set:
+                precision_test, recall_test, F1_test, precision_test_location, recall_test_location, F1_test_location = evaluate_training(savedir, [
+                    folder, ], logging=logging)
 
-#             summary = tf.Summary(value=[tf.Summary.Value(tag="Precision", simple_value=precision_test),
-#                                         tf.Summary.Value(
-#                                             tag="Recall", simple_value=recall_test),
-#                                         tf.Summary.Value(
-#                                             tag="F1", simple_value=F1_test),
-#                                         tf.Summary.Value(
-#                                             tag="Location Precision", simple_value=precision_test_location),
-#                                         tf.Summary.Value(
-#                                             tag="Location Recall", simple_value=recall_test_location),
-#                                         tf.Summary.Value(tag="Location F1", simple_value=F1_test_location), ])
-#             writer.add_summary(summary, epoch)
+            summary = tf.Summary(
+                value=[tf.Summary.Value(
+                    tag="Precision", simple_value=precision_test),
+                    tf.Summary.Value(
+                    tag="Recall", simple_value=recall_test),
+                    tf.Summary.Value(tag="F1", simple_value=F1_test),
+                    tf.Summary.Value(
+                    tag="Location Precision",
+                    simple_value=precision_test_location),
+                    tf.Summary.Value(
+                    tag="Location Recall",
+                    simple_value=recall_test_location),
+                    tf.Summary.Value(
+                    tag="Location F1", simple_value=F1_test_location), ])
+            writer.add_summary(summary, epoch)
 
-#         # Only save the best result
-#         if F1_test > Best_F1_result:
-#             Best_F1_result = F1_test
-#         # else:
-#         #     os.remove(savedir)
+        # Only save the best result
+        if F1_test > Best_F1_result:
+            Best_F1_result = F1_test
+        # else:
+        #     os.remove(savedir)
 
-#     writer.close()
-#     return
+    writer.close()
+    return
 
 
 # def evaluate_training(model_dir, test_set, logging=None, FineNet_path=None):
@@ -354,7 +392,8 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
 #     ave_prf_nms, ave_prf_nms_location = [], []
 
 #     for j, test in enumerate(
-#             load_data((img_name, folder_name, img_size), tra_ori_model, rand=False, aug=0.0, batch_size=1)):
+# load_data((img_name, folder_name, img_size), tra_ori_model, rand=False,
+# aug=0.0, batch_size=1)):
 
 #         # logging.info("%d / %d: %s"%(j+1, len(img_name), img_name[j]))
 #         ori_out_1, ori_out_2, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = main_net_model.predict(
@@ -398,7 +437,7 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
 #                         x_begin = int(mnt_nms[idx_minu, 1]) - patch_minu_radio
 #                         y_begin = int(mnt_nms[idx_minu, 0]) - patch_minu_radio
 #                         patch_minu = original_image[x_begin:x_begin + 2 * patch_minu_radio,
-#                                                     y_begin:y_begin + 2 * patch_minu_radio]
+# y_begin:y_begin + 2 * patch_minu_radio]
 
 #                         patch_minu = cv2.resize(patch_minu, dsize=(
 #                             224, 224), interpolation=cv2.INTER_NEAREST)
@@ -447,53 +486,62 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
 #     ave_prf_nms_location = np.mean(np.array(ave_prf_nms_location), 0)
 #     logging.info(
 #         "Precision: %f\tRecall: %f\tF1-measure: %f\tLocation_dis: %f\tOrientation_delta:%f\n----------------\n" % (
-#             ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2], ave_prf_nms[3], ave_prf_nms[4]))
+# ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2], ave_prf_nms[3],
+# ave_prf_nms[4]))
 
-#     return ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2], ave_prf_nms_location[0], ave_prf_nms_location[1], ave_prf_nms_location[2]
+# return ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2],
+# ave_prf_nms_location[0], ave_prf_nms_location[1],
+# ave_prf_nms_location[2]
 
 
 def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
     # mode is the way to fuse output minutiae with orientation
     # 1: use orientation; 2: use minutiae; 3: fuse average
     blkH, blkW = dir_map.shape
-    dir_map = dir_map % (2*np.pi)
+    dir_map = dir_map % (2 * np.pi)
 
     if mode == 1:
         for k in range(mnt.shape[0]):
             # Choose nearest orientation
-            ori_value = dir_map[int(mnt[k, 1]//block_size),
-                                int(mnt[k, 0]//block_size)]
-            if 0 < mnt[k, 2] and mnt[k, 2] <= np.pi/2:
+            ori_value = dir_map[int(mnt[k, 1] // block_size),
+                                int(mnt[k, 0] // block_size)]
+            if 0 < mnt[k, 2] and mnt[k, 2] <= np.pi / 2:
                 if 0 < ori_value and ori_value <= np.pi / 2:
                     mnt[k, 2] = ori_value
                 if np.pi / 2 < ori_value and ori_value <= np.pi:
-                    if (ori_value - mnt[k, 2]) < (np.pi - ori_value + mnt[k, 2]):
+                    if (ori_value - mnt[k, 2]) < (np.pi -
+                                                  ori_value + mnt[k, 2]):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value + np.pi
-                if np.pi < ori_value and ori_value <= 3*np.pi/2:
+                if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
                     mnt[k, 2] = ori_value - np.pi
-                if 3*np.pi/2 < ori_value and ori_value <= 2 * np.pi:
-                    if (np.pi*2 - ori_value + mnt[k, 2]) < (ori_value - np.pi - mnt[k, 2]):
+                if 3 * np.pi / 2 < ori_value and ori_value <= 2 * np.pi:
+                    if (np.pi * 2 - ori_value +
+                            mnt[k, 2]) < (ori_value - np.pi - mnt[k, 2]):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value - np.pi
-            if np.pi/2 < mnt[k, 2] and mnt[k, 2] <= np.pi:
+            if np.pi / 2 < mnt[k, 2] and mnt[k, 2] <= np.pi:
                 if 0 < ori_value and ori_value <= np.pi / 2:
-                    if (mnt[k, 2] - ori_value) < (np.pi - ori_value + mnt[k, 2]):
+                    if (mnt[k, 2] - ori_value) < (np.pi -
+                                                  ori_value + mnt[k, 2]):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value + np.pi
                 if np.pi / 2 < ori_value and ori_value <= np.pi:
                     mnt[k, 2] = ori_value
-                if np.pi < ori_value and ori_value <= 3*np.pi/2:
-                    if (ori_value - mnt[k, 2]) < (mnt[k, 2] - ori_value + np.pi):
+                if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
+                    if (ori_value -
+                        mnt[k, 2]) < (mnt[k, 2] -
+                                      ori_value +
+                                      np.pi):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value - np.pi
-                if 3*np.pi/2 < ori_value and ori_value <= 2 * np.pi:
+                if 3 * np.pi / 2 < ori_value and ori_value <= 2 * np.pi:
                     mnt[k, 2] = ori_value - np.pi
-            if np.pi < mnt[k, 2] and mnt[k, 2] <= 3*np.pi/2:
+            if np.pi < mnt[k, 2] and mnt[k, 2] <= 3 * np.pi / 2:
                 if 0 < ori_value and ori_value <= np.pi / 2:
                     mnt[k, 2] = ori_value + np.pi
                 if np.pi / 2 < ori_value and ori_value <= np.pi:
@@ -501,27 +549,35 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value + np.pi
-                if np.pi < ori_value and ori_value <= 3*np.pi/2:
+                if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
                     mnt[k, 2] = ori_value
-                if 3*np.pi/2 < ori_value and ori_value <= 2 * np.pi:
-                    if (ori_value - mnt[k, 2]) < (mnt[k, 2] - ori_value + np.pi):
+                if 3 * np.pi / 2 < ori_value and ori_value <= 2 * np.pi:
+                    if (ori_value -
+                        mnt[k, 2]) < (mnt[k, 2] -
+                                      ori_value +
+                                      np.pi):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value - np.pi
-            if 3*np.pi/2 < mnt[k, 2] and mnt[k, 2] <= 2*np.pi:
+            if 3 * np.pi / 2 < mnt[k, 2] and mnt[k, 2] <= 2 * np.pi:
                 if 0 < ori_value and ori_value <= np.pi / 2:
-                    if (np.pi - mnt[k, 2] + ori_value) < (mnt[k, 2] - np.pi - ori_value):
+                    if (np.pi -
+                        mnt[k, 2] +
+                        ori_value) < (mnt[k, 2] -
+                                      np.pi -
+                                      ori_value):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value + np.pi
                 if np.pi / 2 < ori_value and ori_value <= np.pi:
                     mnt[k, 2] = ori_value + np.pi
-                if np.pi < ori_value and ori_value <= 3*np.pi/2:
-                    if (mnt[k, 2] - ori_value) < (np.pi*2 - mnt[k, 2] + ori_value - np.pi):
+                if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
+                    if (mnt[k, 2] - ori_value) < (np.pi *
+                                                  2 - mnt[k, 2] + ori_value - np.pi):
                         mnt[k, 2] = ori_value
                     else:
                         mnt[k, 2] = ori_value - np.pi
-                if 3*np.pi/2 < ori_value and ori_value <= 2 * np.pi:
+                if 3 * np.pi / 2 < ori_value and ori_value <= 2 * np.pi:
                     mnt[k, 2] = ori_value
 
     elif mode == 2:
@@ -536,27 +592,33 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
                 if 0 < ori_value and ori_value <= np.pi / 2:
                     fixed_ori = ori_value
                 if np.pi / 2 < ori_value and ori_value <= np.pi:
-                    if (ori_value - mnt[k, 2]) < (np.pi - ori_value + mnt[k, 2]):
+                    if (ori_value - mnt[k, 2]) < (np.pi -
+                                                  ori_value + mnt[k, 2]):
                         fixed_ori = ori_value
                     else:
                         fixed_ori = ori_value + np.pi
                 if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
                     fixed_ori = ori_value - np.pi
                 if 3 * np.pi / 2 < ori_value and ori_value <= 2 * np.pi:
-                    if (np.pi * 2 - ori_value + mnt[k, 2]) < (ori_value - np.pi - mnt[k, 2]):
+                    if (np.pi * 2 - ori_value +
+                            mnt[k, 2]) < (ori_value - np.pi - mnt[k, 2]):
                         fixed_ori = ori_value
                     else:
                         fixed_ori = ori_value - np.pi
             if np.pi / 2 < mnt[k, 2] and mnt[k, 2] <= np.pi:
                 if 0 < ori_value and ori_value <= np.pi / 2:
-                    if (mnt[k, 2] - ori_value) < (np.pi - ori_value + mnt[k, 2]):
+                    if (mnt[k, 2] - ori_value) < (np.pi -
+                                                  ori_value + mnt[k, 2]):
                         fixed_ori = ori_value
                     else:
                         fixed_ori = ori_value + np.pi
                 if np.pi / 2 < ori_value and ori_value <= np.pi:
                     fixed_ori = ori_value
                 if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
-                    if (ori_value - mnt[k, 2]) < (mnt[k, 2] - ori_value + np.pi):
+                    if (ori_value -
+                        mnt[k, 2]) < (mnt[k, 2] -
+                                      ori_value +
+                                      np.pi):
                         fixed_ori = ori_value
                     else:
                         fixed_ori = ori_value - np.pi
@@ -573,27 +635,35 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
                 if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
                     fixed_ori = ori_value
                 if 3 * np.pi / 2 < ori_value and ori_value <= 2 * np.pi:
-                    if (ori_value - mnt[k, 2]) < (mnt[k, 2] - ori_value + np.pi):
+                    if (ori_value -
+                        mnt[k, 2]) < (mnt[k, 2] -
+                                      ori_value +
+                                      np.pi):
                         fixed_ori = ori_value
                     else:
                         fixed_ori = ori_value - np.pi
             if 3 * np.pi / 2 < mnt[k, 2] and mnt[k, 2] <= 2 * np.pi:
                 if 0 < ori_value and ori_value <= np.pi / 2:
-                    if (np.pi - mnt[k, 2] + ori_value) < (mnt[k, 2] - np.pi - ori_value):
+                    if (np.pi -
+                        mnt[k, 2] +
+                        ori_value) < (mnt[k, 2] -
+                                      np.pi -
+                                      ori_value):
                         fixed_ori = ori_value
                     else:
                         fixed_ori = ori_value + np.pi
                 if np.pi / 2 < ori_value and ori_value <= np.pi:
                     fixed_ori = ori_value + np.pi
                 if np.pi < ori_value and ori_value <= 3 * np.pi / 2:
-                    if (mnt[k, 2] - ori_value) < (np.pi * 2 - mnt[k, 2] + ori_value - np.pi):
+                    if (mnt[k, 2] - ori_value) < (np.pi *
+                                                  2 - mnt[k, 2] + ori_value - np.pi):
                         fixed_ori = ori_value
                     else:
                         fixed_ori = ori_value - np.pi
                 if 3 * np.pi / 2 < ori_value and ori_value <= 2 * np.pi:
                     fixed_ori = ori_value
 
-            mnt[k, 2] = (mnt[k, 2] + fixed_ori)/2.0
+            mnt[k, 2] = (mnt[k, 2] + fixed_ori) / 2.0
     else:
         return
 
@@ -630,7 +700,8 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
 #     time_c = []
 #     ave_prf_nms = []
 #     for i, test in enumerate(
-#             load_data((img_name, folder_name, img_size), tra_ori_model, rand=False, aug=0.0, batch_size=1)):
+# load_data((img_name, folder_name, img_size), tra_ori_model, rand=False,
+# aug=0.0, batch_size=1)):
 
 #         print((i, img_name[i]))
 #         logging.info("%s %d / %d: %s" %
@@ -708,7 +779,7 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
 #                         x_begin = int(mnt_nms[idx_minu, 1]) - patch_minu_radio
 #                         y_begin = int(mnt_nms[idx_minu, 0]) - patch_minu_radio
 #                         patch_minu = original_image[x_begin:x_begin + 2 * patch_minu_radio,
-#                                                     y_begin:y_begin + 2 * patch_minu_radio]
+# y_begin:y_begin + 2 * patch_minu_radio]
 
 #                         patch_minu = cv2.resize(patch_minu, dsize=(
 #                             224, 224), interpolation=cv2.INTER_NEAREST)
@@ -752,7 +823,8 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
 
 #         # Show the orientation
 #         show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
-#                                fname="%s/%s/OF_results/%s_OF.jpg" % (output_dir, set_name, img_name[i]))
+# fname="%s/%s/OF_results/%s_OF.jpg" % (output_dir, set_name,
+# img_name[i]))
 
 #         fuse_minu_orientation(dir_map, mnt_nms, mode=3)
 
@@ -917,7 +989,7 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
 #                         x_begin = int(mnt_nms[idx_minu, 1]) - patch_minu_radio
 #                         y_begin = int(mnt_nms[idx_minu, 0]) - patch_minu_radio
 #                         patch_minu = original_image[x_begin:x_begin + 2 * patch_minu_radio,
-#                                                     y_begin:y_begin + 2 * patch_minu_radio]
+# y_begin:y_begin + 2 * patch_minu_radio]
 
 #                         patch_minu = cv2.resize(patch_minu, dsize=(
 #                             224, 224), interpolation=cv2.INTER_NEAREST)
@@ -961,7 +1033,8 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
 #             np.round(np.squeeze(seg_out)), [8, 8], order=0)
 #         # Show the orientation
 #         show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
-#                                fname="%s/%s/OF_results/%s_OF.jpg" % (output_dir, set_name, img_name[i]))
+# fname="%s/%s/OF_results/%s_OF.jpg" % (output_dir, set_name,
+# img_name[i]))
 
 #         fuse_minu_orientation(dir_map, mnt_nms, mode=3)
 

@@ -73,7 +73,8 @@ def sub_load_data(data, img_size, aug):
         mnt = np.column_stack((mnt_r+tra[[1, 0]], mnt[:, 2]-rot/180*np.pi))
 
     # only keep mnt that stay in pic & not on border
-    mnt = mnt[(8 <= mnt[:, 0])*(mnt[:, 0] < img_size[1]-8)*(8 <= mnt[:, 1])*(mnt[:, 1] < img_size[0]-8), :]
+    mnt = mnt[(8 <= mnt[:, 0])*(mnt[:, 0] < img_size[1]-8)
+              * (8 <= mnt[:, 1])*(mnt[:, 1] < img_size[0]-8), :]
     return img, seg, ali, mnt
 
 
@@ -138,9 +139,11 @@ def load_data(dataset, tra_ori_model, rand=False, aug=0.0, batch_size=1, sample_
         orientation = orientation/np.pi*180+90
         orientation[orientation >= 180.0] = 0.0  # orientation [0, 180)
         minutiae_o = minutiae_o/np.pi*180+90  # [90, 450)
-        minutiae_o[minutiae_o > 360] = minutiae_o[minutiae_o > 360]-360  # to current coordinate system [0, 360)
+        minutiae_o[minutiae_o > 360] = minutiae_o[minutiae_o >
+                                                  360]-360  # to current coordinate system [0, 360)
         minutiae_ori_o = np.copy(minutiae_o)  # copy one
-        minutiae_ori_o[minutiae_ori_o >= 180] = minutiae_ori_o[minutiae_ori_o >= 180]-180  # for strong ori label [0,180)
+        minutiae_ori_o[minutiae_ori_o >= 180] = minutiae_ori_o[minutiae_ori_o >=
+                                                               180]-180  # for strong ori label [0,180)
 
         # ori 2 gaussian
         gaussian_pdf = signal.gaussian(361, 3)
@@ -173,7 +176,8 @@ def load_data(dataset, tra_ori_model, rand=False, aug=0.0, batch_size=1, sample_
         # mnt cls label -1:neg, 0:no care, 1:pos
         label_mnt_s = np.copy(minutiae_seg)
         label_mnt_s[label_mnt_s == 0] = -1  # neg to -1
-        label_mnt_s = (label_mnt_s+ndimage.maximum_filter(label_mnt_s, size=(1, 3, 3, 1)))/2  # around 3*3 pos -> 0
+        label_mnt_s = (label_mnt_s+ndimage.maximum_filter(label_mnt_s,
+                       size=(1, 3, 3, 1)))/2  # around 3*3 pos -> 0
 
         # apply segmentation
         label_ori = label_ori * label_seg * have_alignment
@@ -214,7 +218,9 @@ def select_max(x):
     return x
 
 
-kernal2angle = np.reshape(np.arange(1, 180, 2, dtype=float), [1, 1, 1, 90])/90.*np.pi  # 2angle = angle*2
+kernal2angle = np.reshape(
+    np.arange(1, 180, 2, dtype=float),
+    [1, 1, 1, 90]) / 90. * np.pi  # 2angle = angle*2
 sin2angle, cos2angle = np.sin(kernal2angle), np.cos(kernal2angle)
 
 
@@ -308,7 +314,11 @@ def label2mnt(mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=0.5):
     mnt_w_out = np.squeeze(mnt_w_out)
     mnt_h_out = np.squeeze(mnt_h_out)
     mnt_o_out = np.squeeze(mnt_o_out)
-    assert len(mnt_s_out.shape) == 2 and len(mnt_w_out.shape) == 3 and len(mnt_h_out.shape) == 3 and len(mnt_o_out.shape) == 3
+    assert len(
+        mnt_s_out.shape) == 2 and len(
+        mnt_w_out.shape) == 3 and len(
+        mnt_h_out.shape) == 3 and len(
+        mnt_o_out.shape) == 3
 
     # get cls results
     mnt_sparse = sparse.coo_matrix(mnt_s_out > thresh)
@@ -362,8 +372,18 @@ def orientation(image, stride=8, window=17):
         assert image.get_shape().as_list()[3] == 1, 'Images must be grayscale'
         strides = [1, stride, stride, 1]
         E = np.ones([window, window, 1, 1])
-        sobelx = np.reshape(np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=float), [3, 3, 1, 1])
-        sobely = np.reshape(np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=float), [3, 3, 1, 1])
+        sobelx = np.reshape(
+            np.array([[-1, 0, 1],
+                      [-2, 0, 2],
+                      [-1, 0, 1]],
+                     dtype=float),
+            [3, 3, 1, 1])
+        sobely = np.reshape(
+            np.array([[-1, -2, -1],
+                      [0, 0, 0],
+                      [1, 2, 1]],
+                     dtype=float),
+            [3, 3, 1, 1])
         gaussian = np.reshape(gaussian2d((5, 5), 1), [5, 5, 1, 1])
         with tf.name_scope('sobel_gradient'):
             Ix = tf.nn.conv2d(image, sobelx, strides=[1, 1, 1, 1], padding='SAME', name='sobel_x')
@@ -381,8 +401,14 @@ def orientation(image, stride=8, window=17):
             theta = atan2([2*Gxy, Gxx_Gyy]) + np.pi
         # two-dimensional low-pass filter: Gaussian filter here
         with tf.name_scope('gaussian_filter'):
-            phi_x = tf.nn.conv2d(tf.cos(theta), gaussian, strides=[1, 1, 1, 1], padding='SAME', name='gaussian_x')
-            phi_y = tf.nn.conv2d(tf.sin(theta), gaussian, strides=[1, 1, 1, 1], padding='SAME', name='gaussian_y')
+            phi_x = tf.nn.conv2d(
+                tf.cos(theta),
+                gaussian, strides=[1, 1, 1, 1],
+                padding='SAME', name='gaussian_x')
+            phi_y = tf.nn.conv2d(
+                tf.sin(theta),
+                gaussian, strides=[1, 1, 1, 1],
+                padding='SAME', name='gaussian_y')
             theta = atan2([phi_y, phi_x])/2
     return theta
 
@@ -410,7 +436,9 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None, max_size=None):
         img_name.extend(img_name_t.tolist()*rate)
         folder_name.extend([folder]*img_name_t.shape[0]*rate)
 
-        img_size.append(np.array(misc.imread(folder + 'img_files/' + img_name_t[0] + '.png', mode='L').shape))
+        img_size.append(
+            np.array(
+                misc.imread(folder + 'img_files/' + img_name_t[0] + '.png', mode='L').shape))
 
     img_name = np.asarray(img_name)
     folder_name = np.asarray(folder_name)

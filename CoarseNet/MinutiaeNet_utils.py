@@ -159,7 +159,12 @@ def fmeasure(P, R):
 
 def distance(y_true, y_pred, max_D=16, max_O=np.pi/6):
     D = spatial.distance.cdist(y_true[:, :2], y_pred[:, :2], 'euclidean')
-    O = spatial.distance.cdist(np.reshape(y_true[:, 2], [-1, 1]), np.reshape(y_pred[:, 2], [-1, 1]), angle_delta)
+    O = spatial.distance.cdist(
+        np.reshape(y_true[:, 2],
+                   [-1, 1]),
+        np.reshape(y_pred[:, 2],
+                   [-1, 1]),
+        angle_delta)
     return (D <= max_D)*(O <= max_O)
 
 
@@ -457,7 +462,8 @@ def FastEnhanceTexture(img, sigma=2.5, show=False):
     w2 = 2 ** nextpow2(w)
 
     FFTsize = np.max([h2, w2])
-    x, y = np.meshgrid(list(range(int(-FFTsize / 2), int(FFTsize / 2))), list(range(int(-FFTsize / 2), int(FFTsize / 2))))
+    x, y = np.meshgrid(list(range(int(-FFTsize / 2), int(FFTsize / 2))),
+                       list(range(int(-FFTsize / 2), int(FFTsize / 2))))
     r = np.sqrt(x * x + y * y) + 0.0001
     r = r/FFTsize
 
@@ -540,7 +546,8 @@ def construct_dictionary(ori_num=30):
     dict_all = []
     spacing_all = []
     ori_all = []
-    Y, X = np.meshgrid(list(range(-patch_size2, patch_size2)), list(range(-patch_size2, patch_size2)))
+    Y, X = np.meshgrid(list(range(-patch_size2, patch_size2)),
+                       list(range(-patch_size2, patch_size2)))
 
     for spacing in range(6, 13):
         for valley_spacing in range(3, spacing//2):
@@ -555,7 +562,8 @@ def construct_dictionary(ori_num=30):
                     Y2 = np.zeros((patch_size, patch_size))
                     Y1[X_r_offset <= ridge_spacing] = X_r_offset[X_r_offset <= ridge_spacing]
                     Y2[X_r_offset > ridge_spacing] = X_r_offset[X_r_offset > ridge_spacing] - ridge_spacing
-                    element = -np.sin(2 * math.pi * (Y1 / ridge_spacing / 2)) + np.sin(2 * math.pi * (Y2 / valley_spacing / 2))
+                    element = -np.sin(2 * math.pi * (Y1 / ridge_spacing / 2)
+                                      ) + np.sin(2 * math.pi * (Y2 / valley_spacing / 2))
 
                     element = element.reshape(patch_size*patch_size,)
                     element = element-np.mean(element)
@@ -622,7 +630,8 @@ def get_maps_STFT(img, patch_size=64, block_size=16, preprocess=False):
 
     for i in range(0, blkH):
         for j in range(0, blkW):
-            patch = img[i*block_size:i*block_size+patch_size, j*block_size:j*block_size+patch_size].copy()
+            patch = img[i*block_size:i*block_size+patch_size,
+                        j*block_size:j*block_size+patch_size].copy()
             local_info[i, j] = local_STFT(patch, weight, dBPass)
             local_info[i, j].analysis(r, dir_ind_list)
 
@@ -727,7 +736,8 @@ class local_STFT:
                 tmp_ori = (i-pad_size)*ori_interval + ori_interval2 + math.pi/2
                 ori.append(tmp_ori)
                 confidence.append(smoothed_dir_norm[i])
-                tmp_fre = np.sum(wenergy[dir_ind_list[i-pad_size][:, 0], dir_ind_list[i-pad_size][:, 1]])/dir_norm[i]
+                tmp_fre = np.sum(wenergy[dir_ind_list[i-pad_size][:, 0],
+                                 dir_ind_list[i-pad_size][:, 1]])/dir_norm[i]
                 tmp_fre = 1/(tmp_fre+0.00001)
                 fre.append(tmp_fre)
 
