@@ -10,16 +10,15 @@
     year      = {2018},
     }
 """
-
-
-import argparse
-from CoarseNet_model import *
-from CoarseNet_utils import *
-from keras.optimizers import SGD, Adam
-from keras import backend as K
-from MinutiaeNet_utils import *
-from datetime import datetime
 import os
+import argparse
+from datetime import datetime
+
+import tensorflow as tf
+from tensorflow.keras import optimizers
+
+from . import MinutiaeNet_utils, CoarseNet_model
+
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 
 
@@ -35,35 +34,34 @@ args = parser.parse_args()
 
 os.environ["CUDA_VISIBLE_DEVICES"] = args.GPU
 
-config = K.tf.ConfigProto(gpu_options=K.tf.GPUOptions(allow_growth=True))
-sess = K.tf.Session(config=config)
-K.set_session(sess)
+config = tf.compat.v1.ConfigProto(gpu_options=tf.compat.v1.GPUOptions(allow_growth=True))
+sess = tf.compat.v1.Session(config=config)
+tf.compat.v1.keras.backend.set_session(sess)
 
-batch_size = 2
-use_multiprocessing = False
-input_size = 400
+BATCH_SIZE = 2
+USE_MULTIPROCESSING = False
+INPUT_SIZE = 400
 
 # Can use multiple folders for training
 train_set = ['../Dataset/CoarseNet_train/', ]
 
 validate_set = ['../path/to/your/data/', ]
 
-pretrain_dir = '../Models/CoarseNet.h5'
+PRETRAIN_DIR = '../Models/CoarseNet.h5'
 output_dir = '../output_CoarseNet/'+datetime.now().strftime('%Y%m%d-%H%M%S')
-FineNet_dir = '../Models/FineNet.h5'
+FINENET_DIR = '../Models/FineNet.h5'
 
 if __name__ == '__main__':
 
     output_dir = '../output_CoarseNet/trainResults/' + datetime.now().strftime('%Y%m%d-%H%M%S')
-    logging = init_log(output_dir)
+    logging = MinutiaeNet_utils.init_log(output_dir)
     logging.info("Learning rate = %s", args.lr)
-    logging.info("Pretrain dir = %s", pretrain_dir)
+    logging.info("Pretrain dir = %s", PRETRAIN_DIR)
 
-    train(
-        input_shape=(input_size, input_size),
-        train_set=train_set, output_dir=output_dir, pretrain_dir=pretrain_dir,
-        batch_size=batch_size, test_set=validate_set,
-        learning_config=Adam(
+    CoarseNet_model.train(
+        train_set=train_set, output_dir=output_dir, pretrain_dir=PRETRAIN_DIR,
+        batch_size=BATCH_SIZE, test_set=validate_set,
+        learning_config=optimizers.Adam(
             lr=float(args.lr),
             beta_1=0.9, beta_2=0.999, epsilon=1e-08, clipnorm=0.9),
         logging=logging)

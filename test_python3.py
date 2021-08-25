@@ -11,9 +11,10 @@ print("skap testovacka")
 coarse_net = CoarseNet_model.CoarseNetmodel(
     (None, None, 1),
     '/home/jakub/projects/bp/minutiae_classificator/models/CoarseNet.h5', mode='deploy')
-fine_net = FineNet_model.FineNetmodel(num_classes=2,
-                                      pretrained_path='/home/jakub/projects/bp/minutiae_classificator/models/FineNet.h5',
-                                      input_shape=(224, 224, 3))
+fine_net = FineNet_model.get_fine_net_model(
+    num_classes=2,
+    pretrained_path='/home/jakub/projects/bp/minutiae_classificator/models/FineNet.h5',
+    input_shape=(224, 224, 3))
 
 
 class Minutiae:
@@ -66,8 +67,8 @@ def get_extracted_minutiae_data(image_path, as_image=True):
 
 def extract_minutiae(image, original_image):
     # Generate OF
-    texture_img = MinutiaeNet_utils.FastEnhanceTexture(image, sigma=2.5, show=False)
-    dir_map, fre_map = MinutiaeNet_utils.get_maps_STFT(
+    texture_img = MinutiaeNet_utils.fast_enhance_texture(image, sigma=2.5, show=False)
+    dir_map, fre_map = MinutiaeNet_utils.get_maps_stft(
         texture_img, patch_size=64, block_size=16, preprocess=True)
 
     image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
@@ -100,8 +101,8 @@ def extract_minutiae(image, original_image):
             mnt_o_out,
             thresh=early_minutiae_thres)
 
-        mnt_nms_1 = CoarseNet_utils.py_cpu_nms(mnt, 0.5)
-        mnt_nms_2 = CoarseNet_utils.nms(mnt)
+        mnt_nms_1 = MinutiaeNet_utils.py_cpu_nms(mnt, 0.5)
+        mnt_nms_2 = MinutiaeNet_utils.nms(mnt)
         # Make sure good result is given
         if mnt_nms_1.shape[0] > 4 and mnt_nms_2.shape[0] > 4:
             break
