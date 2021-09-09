@@ -15,7 +15,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import backend as keras_backend
 
-from . import CoarseNet_utils
+from . import coarse_net_utils
 
 
 def orientation_loss(y_true, y_pred, lamb=1.):
@@ -41,7 +41,7 @@ def orientation_loss(y_true, y_pred, lamb=1.):
     mean_kernal = np.reshape(
         np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]], dtype=np.float32)/8, [3, 3, 1, 1])
 
-    sin2angle_ori, cos2angle_ori, modulus_ori = CoarseNet_utils.ori2angle(y_pred)
+    sin2angle_ori, cos2angle_ori, modulus_ori = coarse_net_utils.ori2angle(y_pred)
     sin_2_angle = keras_backend.conv2d(sin2angle_ori, mean_kernal, padding='same')
     cos_2_angle = keras_backend.conv2d(cos2angle_ori, mean_kernal, padding='same')
     modulus = keras_backend.conv2d(modulus_ori, mean_kernal, padding='same')

@@ -15,7 +15,7 @@ from datetime import datetime
 
 import tensorflow as tf
 
-from . import CoarseNet_model
+from . import coarse_net_model
 
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 os.environ["CUDA_VISIBLE_DEVICES"] = '0'
@@ -43,16 +43,16 @@ def main():
         output_dir = '../output_CoarseNet/deployResults/' + datetime.now().strftime('%Y%m%d-%H%M%S')
         # logging = MinutiaeNet_utils.init_log(output_dir)
         for _, folder in enumerate(deploy_set):
-            CoarseNet_model.deploy_with_GT(folder, output_dir=output_dir,
-                                           model_path=PRETRAIN_DIR, FineNet_path=FINENET_DIR)
+            coarse_net_model.deploy_with_gt(folder, output_dir=output_dir,
+                                            model_path=PRETRAIN_DIR, finenet_path=FINENET_DIR)
             # evaluate_training(model_dir=pretrain_dir, test_set=folder, logging=logging)
     elif MODE == 'inference':
         output_dir = '../output_CoarseNet/inferenceResults/' + datetime.now().strftime('%Y%m%d-%H%M%S')
         # logging = MinutiaeNet_utils.init_log(output_dir)
         for _, folder in enumerate(inference_set):
-            CoarseNet_model.inference(
-                folder, output_dir=output_dir, model_path=PRETRAIN_DIR, FineNet_path=FINENET_DIR,
-                file_ext='.bmp', isHavingFineNet=False)
+            coarse_net_model.inference(
+                folder, output_dir=output_dir, model_path=PRETRAIN_DIR, finenet_path=FINENET_DIR,
+                file_ext='.bmp', is_having_finenet=False)
     else:
         pass
 

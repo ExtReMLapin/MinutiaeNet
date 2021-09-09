@@ -17,7 +17,7 @@ import numpy as np
 from sklearn.metrics import confusion_matrix
 from tensorflow.keras import callbacks, preprocessing, optimizers
 
-from . import FineNet_model
+from . import fine_net_model
 
 os.environ["CUDA_VISIBLE_DEVICES"] = '2'
 os.environ['KERAS_BACKEND'] = 'tensorflow'
@@ -101,9 +101,9 @@ def lr_schedule(epoch):
 
 
 # ============== Define model ==================
-model = FineNet_model.get_fine_net_model(num_classes=NUM_CLASSES,
-                                         pretrained_path='../Models/FineNet.h5',
-                                         input_shape=input_shape)
+model = fine_net_model.get_fine_net_model(num_classes=NUM_CLASSES,
+                                          pretrained_path='../Models/FineNet.h5',
+                                          input_shape=input_shape)
 
 # Save model architecture
 #plot_model(model, to_file='./modelFineNet.pdf',show_shapes=True)
@@ -162,4 +162,4 @@ test_labels = test_batches.classes[test_batches.index_array]
 
 cm = confusion_matrix(test_labels, np.argmax(predictions, axis=1))
 cm_plot_labels = ['minu', 'non_minu']
-FineNet_model.plot_confusion_matrix(cm, cm_plot_labels, title='Confusion Matrix')
+fine_net_model.plot_confusion_matrix(cm, cm_plot_labels, title='Confusion Matrix')

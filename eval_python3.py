@@ -3,15 +3,15 @@ import os
 import cv2
 import numpy as np
 
-from CoarseNet import MinutiaeNet_utils, CoarseNet_utils, CoarseNet_model
-from FineNet import FineNet_model
+from CoarseNet import minutiae_net_utils, coarse_net_utils, coarse_net_model
+from FineNet import fine_net_model
 
 print("skap testovacka")
 
-coarse_net = CoarseNet_model.CoarseNetmodel(
+coarse_net = coarse_net_model.get_coarse_net_model(
     (None, None, 1),
     '/home/jakub/projects/bp/minutiae_classificator/models/CoarseNet.h5', mode='deploy')
-fine_net = FineNet_model.get_fine_net_model(
+fine_net = fine_net_model.get_fine_net_model(
     num_classes=2,
     pretrained_path='/home/jakub/projects/bp/minutiae_classificator/models/FineNet.h5',
     input_shape=(224, 224, 3))
@@ -67,8 +67,8 @@ def get_extracted_minutiae_data(image_path, as_image=True):
 
 def extract_minutiae(image, original_image):
     # Generate OF
-    texture_img = MinutiaeNet_utils.fast_enhance_texture(image, sigma=2.5, show=False)
-    dir_map, fre_map = MinutiaeNet_utils.get_maps_stft(
+    texture_img = minutiae_net_utils.fast_enhance_texture(image, sigma=2.5, show=False)
+    dir_map, fre_map = minutiae_net_utils.get_maps_stft(
         texture_img, patch_size=64, block_size=16, preprocess=True)
 
     image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
@@ -92,7 +92,7 @@ def extract_minutiae(image, original_image):
 
     # In cases of small amount of minutiae given, try adaptive threshold
     while final_minutiae_score_threashold >= 0:
-        mnt = CoarseNet_utils.label2mnt(
+        mnt = coarse_net_utils.label2mnt(
             np.squeeze(mnt_s_out) *
             np.round(
                 np.squeeze(seg_out)),
@@ -101,8 +101,8 @@ def extract_minutiae(image, original_image):
             mnt_o_out,
             thresh=early_minutiae_thres)
 
-        mnt_nms_1 = MinutiaeNet_utils.py_cpu_nms(mnt, 0.5)
-        mnt_nms_2 = MinutiaeNet_utils.nms(mnt)
+        mnt_nms_1 = minutiae_net_utils.py_cpu_nms(mnt, 0.5)
+        mnt_nms_2 = minutiae_net_utils.nms(mnt)
         # Make sure good result is given
         if mnt_nms_1.shape[0] > 4 and mnt_nms_2.shape[0] > 4:
             break
@@ -110,7 +110,7 @@ def extract_minutiae(image, original_image):
             final_minutiae_score_threashold = final_minutiae_score_threashold - 0.05
             early_minutiae_thres = early_minutiae_thres - 0.05
 
-    mnt_nms = MinutiaeNet_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
+    mnt_nms = minutiae_net_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
 
     mnt_nms = mnt_nms[mnt_nms[:, 3] > early_minutiae_thres, :]
 
@@ -158,6 +158,6 @@ def extract_minutiae(image, original_image):
         mnt_nms = mnt_nms[mnt_nms[:, 3] >
                           final_minutiae_score_threashold, :]
 
-    CoarseNet_model.fuse_minu_orientation(dir_map, mnt_nms, mode=3)
+    coarse_net_model.fuse_minu_orientation(dir_map, mnt_nms, mode=3)
 
     return mnt_nms

@@ -20,7 +20,7 @@ import tensorflow as tf
 from scipy import ndimage, signal, sparse
 from tensorflow.keras import models, layers, backend as keras_backend
 
-from . import MinutiaeNet_utils
+from . import minutiae_net_utils
 
 
 def sub_load_data(data, img_size, aug):
@@ -38,7 +38,7 @@ def sub_load_data(data, img_size, aug):
     if ali is None:
         ali = np.zeros_like(img)
 
-    mnt = np.array(MinutiaeNet_utils.mnt_reader(dataset+'mnt_files/'+img_name+'.mnt'), dtype=float)
+    mnt = np.array(minutiae_net_utils.mnt_reader(dataset+'mnt_files/'+img_name+'.mnt'), dtype=float)
 
     if any(img.shape != img_size):
         # random pad mean values to reach required shape
@@ -73,7 +73,7 @@ def sub_load_data(data, img_size, aug):
         seg = ndimage.shift(seg, tra, mode='constant')
         ali = ndimage.rotate(ali, rot, reshape=False, mode='reflect')
         ali = ndimage.shift(ali, tra, mode='reflect')
-        mnt_r = MinutiaeNet_utils.point_rot(mnt[:, :2], rot/180*np.pi, img.shape, img.shape)
+        mnt_r = minutiae_net_utils.point_rot(mnt[:, :2], rot/180*np.pi, img.shape, img.shape)
         mnt = np.column_stack((mnt_r+tra[[1, 0]], mnt[:, 2]-rot/180*np.pi))
 
     # only keep mnt that stay in pic & not on border
@@ -239,7 +239,7 @@ def ori2angle(ori):
 
 # find highest peak using gaussian
 def ori_highest_peak(y_pred, length=180):
-    glabel = MinutiaeNet_utils.gausslabel(length=length, stride=2).astype(np.float32)
+    glabel = minutiae_net_utils.gausslabel(length=length, stride=2).astype(np.float32)
     y_pred = tf.convert_to_tensor(y_pred, np.float32)
     ori_gau = keras_backend.conv2d(y_pred, glabel, padding='same')
     return ori_gau
@@ -397,7 +397,7 @@ def get_orientation(image, stride=8, window=17):
                       [1, 2, 1]],
                      dtype=float),
             [3, 3, 1, 1])
-        gaussian = np.reshape(MinutiaeNet_utils.gaussian2d((5, 5), 1), [5, 5, 1, 1])
+        gaussian = np.reshape(minutiae_net_utils.gaussian2d((5, 5), 1), [5, 5, 1, 1])
         with tf.name_scope('sobel_gradient'):
             i_x = tf.nn.conv2d(image, sobelx, strides=[1, 1, 1, 1], padding='SAME', name='sobel_x')
             i_y = tf.nn.conv2d(image, sobely, strides=[1, 1, 1, 1], padding='SAME', name='sobel_y')
@@ -442,7 +442,7 @@ def get_maximum_img_size_and_names(dataset, sample_rate=None):
     img_name, folder_name, img_size = [], [], []
 
     for folder, rate in zip(dataset, sample_rate):
-        _, img_name_t = MinutiaeNet_utils.get_files_in_folder(folder, 'img_files/*'+'.png')
+        _, img_name_t = minutiae_net_utils.get_files_in_folder(folder, 'img_files/*'+'.png')
         img_name.extend(img_name_t.tolist()*rate)
         folder_name.extend([folder]*img_name_t.shape[0]*rate)
 

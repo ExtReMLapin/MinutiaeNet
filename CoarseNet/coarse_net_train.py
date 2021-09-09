@@ -17,7 +17,7 @@ from datetime import datetime
 import tensorflow as tf
 from tensorflow.keras import optimizers
 
-from . import MinutiaeNet_utils, CoarseNet_model
+from . import minutiae_net_utils, coarse_net_model
 
 os.environ['KERAS_BACKEND'] = 'tensorflow'
 
@@ -54,11 +54,11 @@ FINENET_DIR = '../Models/FineNet.h5'
 if __name__ == '__main__':
 
     output_dir = '../output_CoarseNet/trainResults/' + datetime.now().strftime('%Y%m%d-%H%M%S')
-    logging = MinutiaeNet_utils.init_log(output_dir)
+    logging = minutiae_net_utils.init_log(output_dir)
     logging.info("Learning rate = %s", args.lr)
     logging.info("Pretrain dir = %s", PRETRAIN_DIR)
 
-    CoarseNet_model.train(
+    coarse_net_model.train(
         train_set=train_set, output_dir=output_dir, pretrain_dir=PRETRAIN_DIR,
         batch_size=BATCH_SIZE, test_set=validate_set,
         learning_config=optimizers.Adam(

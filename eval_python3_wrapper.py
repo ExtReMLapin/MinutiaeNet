@@ -10,8 +10,8 @@ from test_python3 import get_extracted_minutiae
 # sys.path.append(os.path.realpath('../logic/'))
 
 
-images_path = "/home/jakub/projects/bp/DBs/biometric DBs/FVC_Fingerprint_DB/FVC2004/test/"
-manually_extracted_path = "/home/jakub/projects/bp/DBs/biometric DBs/FM3/test/"
+images_path = "/home/jakub/projects/bp/DBs/biometric DBs/FVC_Fingerprint_DB/FVC2004/DB1_A/"
+manually_extracted_path = "/home/jakub/projects/bp/DBs/biometric DBs/FM3/FM3_FVC2004DB1A/"
 
 RADIUSES = [15, 20, 25]
 THETA_RESERVE = 25
@@ -260,38 +260,50 @@ for extracted_file in extracted:
         correctly_extracted_items,
         output_file)
 
-    sum_15_correctly_extracted += relative_values['output_values_without_angle'][0]['correctly_extracted']
-    sum_15_incorrectly_extracted += relative_values['output_values_without_angle'][0]['incorrectly_extracted']
+    sum_15_correctly_extracted += relative_values['output_values_without_angle'][0][
+        'correctly_extracted']
+    sum_15_incorrectly_extracted += relative_values['output_values_without_angle'][0][
+        'incorrectly_extracted']
     sum_15_correctly_extracted_from_manually_extracted += relative_values[
         'output_values_without_angle'][0]['correctly_extracted_from_manually_extracted']
     sum_15_not_extracted_from_manually_extracted += relative_values[
         'output_values_without_angle'][0]['not_extracted_from_manually_extracted']
-    sum_20_correctly_extracted += relative_values['output_values_without_angle'][1]['correctly_extracted']
-    sum_20_incorrectly_extracted += relative_values['output_values_without_angle'][1]['incorrectly_extracted']
+    sum_20_correctly_extracted += relative_values['output_values_without_angle'][1][
+        'correctly_extracted']
+    sum_20_incorrectly_extracted += relative_values['output_values_without_angle'][1][
+        'incorrectly_extracted']
     sum_20_correctly_extracted_from_manually_extracted += relative_values[
         'output_values_without_angle'][1]['correctly_extracted_from_manually_extracted']
     sum_20_not_extracted_from_manually_extracted += relative_values[
         'output_values_without_angle'][1]['not_extracted_from_manually_extracted']
-    sum_25_correctly_extracted += relative_values['output_values_without_angle'][2]['correctly_extracted']
-    sum_25_incorrectly_extracted += relative_values['output_values_without_angle'][2]['incorrectly_extracted']
+    sum_25_correctly_extracted += relative_values['output_values_without_angle'][2][
+        'correctly_extracted']
+    sum_25_incorrectly_extracted += relative_values['output_values_without_angle'][2][
+        'incorrectly_extracted']
     sum_25_correctly_extracted_from_manually_extracted += relative_values[
         'output_values_without_angle'][2]['correctly_extracted_from_manually_extracted']
     sum_25_not_extracted_from_manually_extracted += relative_values[
         'output_values_without_angle'][2]['not_extracted_from_manually_extracted']
-    sum_15_correctly_extracted_angle += relative_values['output_values_with_angle'][0]['correctly_extracted']
-    sum_15_incorrectly_extracted_angle += relative_values['output_values_with_angle'][0]['incorrectly_extracted']
+    sum_15_correctly_extracted_angle += relative_values['output_values_with_angle'][0][
+        'correctly_extracted']
+    sum_15_incorrectly_extracted_angle += relative_values['output_values_with_angle'][0][
+        'incorrectly_extracted']
     sum_15_correctly_extracted_from_manually_extracted_angle += relative_values[
         'output_values_with_angle'][0]['correctly_extracted_from_manually_extracted']
     sum_15_not_extracted_from_manually_extracted_angle += relative_values[
         'output_values_with_angle'][0]['not_extracted_from_manually_extracted']
-    sum_20_correctly_extracted_angle += relative_values['output_values_with_angle'][1]['correctly_extracted']
-    sum_20_incorrectly_extracted_angle += relative_values['output_values_with_angle'][1]['incorrectly_extracted']
+    sum_20_correctly_extracted_angle += relative_values['output_values_with_angle'][1][
+        'correctly_extracted']
+    sum_20_incorrectly_extracted_angle += relative_values['output_values_with_angle'][1][
+        'incorrectly_extracted']
     sum_20_correctly_extracted_from_manually_extracted_angle += relative_values[
         'output_values_with_angle'][1]['correctly_extracted_from_manually_extracted']
     sum_20_not_extracted_from_manually_extracted_angle += relative_values[
         'output_values_with_angle'][1]['not_extracted_from_manually_extracted']
-    sum_25_correctly_extracted_angle += relative_values['output_values_with_angle'][2]['correctly_extracted']
-    sum_25_incorrectly_extracted_angle += relative_values['output_values_with_angle'][2]['incorrectly_extracted']
+    sum_25_correctly_extracted_angle += relative_values['output_values_with_angle'][2][
+        'correctly_extracted']
+    sum_25_incorrectly_extracted_angle += relative_values['output_values_with_angle'][2][
+        'incorrectly_extracted']
     sum_25_correctly_extracted_from_manually_extracted_angle += relative_values[
         'output_values_with_angle'][2]['correctly_extracted_from_manually_extracted']
     sum_25_not_extracted_from_manually_extracted_angle += relative_values[

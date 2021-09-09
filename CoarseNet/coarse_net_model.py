@@ -19,8 +19,8 @@ import numpy as np
 from scipy import ndimage
 from tensorflow.keras import layers, models, regularizers, optimizers, utils
 
-from FineNet import FineNet_model
-from . import CoarseNet_utils, MinutiaeNet_utils, LossFunctions
+from FineNet import fine_net_model
+from . import coarse_net_utils, minutiae_net_utils, loss_functions
 
 
 # def conv_bn(bottom, w_size, name, strides=(1, 1), dilation_rate=(1, 1)):
@@ -53,10 +53,10 @@ def conv_bn_prelu(bottom, w_size, name, strides=(1, 1), dilation_rate=(1, 1)):
     return top
 
 
-def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
+def get_coarse_net_model(input_shape=(400, 400, 1), weights_path=None, mode='train'):
     # Change network architecture here!!
     img_input = layers.Input(input_shape)
-    bn_img = layers.Lambda(CoarseNet_utils.img_normalization,
+    bn_img = layers.Lambda(coarse_net_utils.img_normalization,
                            name='img_normalized')(img_input)
 
     # Main part
@@ -131,17 +131,17 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
     seg_3 = layers.Conv2D(1, (1, 1), padding='same', name='seg_3_2')(seg_3)
 
     # sum fusion for ori
-    ori_out = layers.Lambda(CoarseNet_utils.merge_sum)([ori_1, ori_2, ori_3])
+    ori_out = layers.Lambda(coarse_net_utils.merge_sum)([ori_1, ori_2, ori_3])
     ori_out_1 = layers.Activation('sigmoid', name='ori_out_1')(ori_out)
     ori_out_2 = layers.Activation('sigmoid', name='ori_out_2')(ori_out)
 
     # sum fusion for segmentation
-    seg_out = layers.Lambda(CoarseNet_utils.merge_sum)([seg_1, seg_2, seg_3])
+    seg_out = layers.Lambda(coarse_net_utils.merge_sum)([seg_1, seg_2, seg_3])
     seg_out = layers.Activation('sigmoid', name='seg_out')(seg_out)
 
     # ----------------------------------------------------------------------------
     # enhance part
-    filters_cos, filters_sin = MinutiaeNet_utils.gabor_bank(stride=2, lambda_value=8)
+    filters_cos, filters_sin = minutiae_net_utils.gabor_bank(stride=2, lambda_value=8)
 
     filter_img_real = layers.Conv2D(
         filters_cos.shape[3],
@@ -156,8 +156,8 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
         weights=[filters_sin, np.zeros([filters_sin.shape[3]])],
         padding='same', name='enh_img_imag_1')(img_input)
 
-    ori_peak = layers.Lambda(CoarseNet_utils.ori_highest_peak)(ori_out_1)
-    ori_peak = layers.Lambda(CoarseNet_utils.select_max)(
+    ori_peak = layers.Lambda(coarse_net_utils.ori_highest_peak)(ori_out_1)
+    ori_peak = layers.Lambda(coarse_net_utils.select_max)(
         ori_peak)  # select max ori and set it to 1
 
     # Use this function to upsample image
@@ -165,20 +165,20 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
     seg_round = layers.Activation('softsign')(seg_out)
 
     upsample_seg = layers.UpSampling2D(size=(8, 8))(seg_round)
-    mul_mask_real = layers.Lambda(CoarseNet_utils.merge_mul)(
+    mul_mask_real = layers.Lambda(coarse_net_utils.merge_mul)(
         [filter_img_real, upsample_ori])
 
-    enh_img_real = layers.Lambda(CoarseNet_utils.reduce_sum,
+    enh_img_real = layers.Lambda(coarse_net_utils.reduce_sum,
                                  name='enh_img_real_2')(mul_mask_real)
-    mul_mask_imag = layers.Lambda(CoarseNet_utils.merge_mul)(
+    mul_mask_imag = layers.Lambda(coarse_net_utils.merge_mul)(
         [filter_img_imag, upsample_ori])
 
-    enh_img_imag = layers.Lambda(CoarseNet_utils.reduce_sum,
+    enh_img_imag = layers.Lambda(coarse_net_utils.reduce_sum,
                                  name='enh_img_imag_2')(mul_mask_imag)
-    enh_img = layers.Lambda(CoarseNet_utils.atan2, name='phase_img')(
+    enh_img = layers.Lambda(coarse_net_utils.atan2, name='phase_img')(
         [enh_img_imag, enh_img_real])
 
-    enh_seg_img = layers.Lambda(CoarseNet_utils.merge_concat, name='phase_seg_img')(
+    enh_seg_img = layers.Lambda(coarse_net_utils.merge_concat, name='phase_seg_img')(
         [enh_img, upsample_seg])
     # ----------------------------------------------------------------------------
     # mnt part
@@ -221,7 +221,7 @@ def CoarseNetmodel(input_shape=(400, 400, 1), weights_path=None, mode='train'):
     mnt_conv = layers.MaxPooling2D(pool_size=(2, 2), strides=(2, 2))(mnt_conv4)
     # ==========================
 
-    mnt_o_1 = layers.Lambda(CoarseNet_utils.merge_concat)([mnt_conv, ori_out_1])
+    mnt_o_1 = layers.Lambda(coarse_net_utils.merge_concat)([mnt_conv, ori_out_1])
     mnt_o_2 = conv_bn_prelu(mnt_o_1, (256, 1, 1), 'mnt_o_1_1')
     mnt_o_3 = layers.Conv2D(180, (1, 1), padding='same', name='mnt_o_1_2')(mnt_o_2)
     mnt_o_out = layers.Activation('sigmoid', name='mnt_o_out')(mnt_o_3)
@@ -277,10 +277,10 @@ def train(
         train_set=None, output_dir='../output_CoarseNet/' + datetime.now().strftime('%Y%m%d-%H%M%S'),
         pretrain_dir=None, batch_size=1, test_set=None, learning_config=None, logging=None):
 
-    img_name, folder_name, img_size = CoarseNet_utils.get_maximum_img_size_and_names(
+    img_name, folder_name, img_size = coarse_net_utils.get_maximum_img_size_and_names(
         train_set, None)
 
-    main_net_model = CoarseNetmodel(
+    main_net_model = get_coarse_net_model(
         (img_size[0], img_size[1], 1), pretrain_dir, 'train')
     # Save model architecture
     utils.plot_model(main_net_model, to_file=output_dir +
@@ -288,16 +288,16 @@ def train(
 
     main_net_model.compile(
         optimizer=learning_config,
-        loss={'seg_out': LossFunctions.segmentation_loss, 'mnt_o_out': LossFunctions.orientation_output_loss,
-              'mnt_w_out': LossFunctions.orientation_output_loss, 'mnt_h_out': LossFunctions.orientation_output_loss,
-              'mnt_s_out': LossFunctions.minutiae_score_loss},
+        loss={'seg_out': loss_functions.segmentation_loss, 'mnt_o_out': loss_functions.orientation_output_loss,
+              'mnt_w_out': loss_functions.orientation_output_loss, 'mnt_h_out': loss_functions.orientation_output_loss,
+              'mnt_s_out': loss_functions.minutiae_score_loss},
         loss_weights={'seg_out': .5, 'mnt_w_out': .5, 'mnt_h_out': .5, 'mnt_o_out': 100.,
                       'mnt_s_out': 50.},
-        metrics={'seg_out': [CoarseNet_utils.seg_acc_pos, CoarseNet_utils.seg_acc_neg, CoarseNet_utils.seg_acc_all],
-                 'mnt_o_out': [CoarseNet_utils.mnt_acc_delta_10, ],
-                 'mnt_w_out': [CoarseNet_utils.mnt_mean_delta, ],
-                 'mnt_h_out': [CoarseNet_utils.mnt_mean_delta, ],
-                 'mnt_s_out': [CoarseNet_utils.seg_acc_pos, CoarseNet_utils.seg_acc_neg, CoarseNet_utils.seg_acc_all]})
+        metrics={'seg_out': [coarse_net_utils.seg_acc_pos, coarse_net_utils.seg_acc_neg, coarse_net_utils.seg_acc_all],
+                 'mnt_o_out': [coarse_net_utils.mnt_acc_delta_10, ],
+                 'mnt_w_out': [coarse_net_utils.mnt_mean_delta, ],
+                 'mnt_h_out': [coarse_net_utils.mnt_mean_delta, ],
+                 'mnt_s_out': [coarse_net_utils.seg_acc_pos, coarse_net_utils.seg_acc_neg, coarse_net_utils.seg_acc_all]})
 
     writer = tf.compat.v1.summary.FileWriter(output_dir)
 
@@ -305,12 +305,12 @@ def train(
     best_loss = 10000000
     for epoch in range(1000):
         outdir = "%s/saved_best_loss/" % (output_dir)
-        MinutiaeNet_utils.mkdir(outdir)
+        minutiae_net_utils.mkdir(outdir)
 
         for i, train_step in enumerate(
-            CoarseNet_utils.load_data(
+            coarse_net_utils.load_data(
                 (img_name, folder_name, img_size),
-                CoarseNet_utils.get_tra_ori, rand=True, aug=0.7, batch_size=batch_size)):
+                coarse_net_utils.get_tra_ori, rand=True, aug=0.7, batch_size=batch_size)):
             loss = main_net_model.train_on_batch(
                 train_step[0],
                 {'seg_out': train_step[3],
@@ -341,13 +341,13 @@ def train(
         # Evaluate every 5 epoch: for faster training
         if epoch % 10 == 0:
             outdir = "%s/saved_models/" % (output_dir)
-            MinutiaeNet_utils.mkdir(outdir)
+            minutiae_net_utils.mkdir(outdir)
             savedir = "%s%s" % (outdir, str(epoch))
             main_net_model.save_weights(savedir, True)
 
             for folder in test_set:
-                precision_test, recall_test, f1_test, precision_test_location, recall_test_location, f1_test_location = evaluate_training(savedir, [
-                    folder, ], logging=logging)
+                (precision_test, recall_test, f1_test, precision_test_location, recall_test_location,
+                 f1_test_location) = evaluate_training(savedir, [folder, ], logging=logging)
 
             summary = tf.compat.v1.Summary(
                 value=[tf.compat.v1.Summary.Value(
@@ -372,38 +372,37 @@ def train(
         #     os.remove(savedir)
 
     writer.close()
-    return
 
 
 def evaluate_training(model_dir, test_set, logging=None, finenet_path=None):
     logging.info("Evaluating %s:", test_set)
 
     # Prepare input info
-    img_name, folder_name, img_size = CoarseNet_utils.get_maximum_img_size_and_names(test_set)
+    img_name, folder_name, img_size = coarse_net_utils.get_maximum_img_size_and_names(test_set)
 
-    main_net_model = CoarseNetmodel((None, None, 1), model_dir, 'test')
+    main_net_model = get_coarse_net_model((None, None, 1), model_dir, 'test')
 
     ave_prf_nms, ave_prf_nms_location = [], []
 
     if finenet_path is not None:
         # ====== Load FineNet to verify
-        model_finenet = FineNet_model.get_fine_net_model(num_classes=2,
-                                                         pretrained_path=finenet_path,
-                                                         input_shape=(224, 224, 3))
+        model_finenet = fine_net_model.get_fine_net_model(num_classes=2,
+                                                          pretrained_path=finenet_path,
+                                                          input_shape=(224, 224, 3))
 
         model_finenet.compile(loss='categorical_crossentropy',
                               optimizer=optimizers.Adam(lr=0),
                               metrics=['accuracy'])
 
     for _, test in enumerate(
-        CoarseNet_utils.load_data(
+        coarse_net_utils.load_data(
             (img_name, folder_name, img_size),
-            CoarseNet_utils.get_tra_ori, rand=False, aug=0.0, batch_size=1)):
+            coarse_net_utils.get_tra_ori, rand=False, aug=0.0, batch_size=1)):
 
         # logging.info("%d / %d: %s"%(j+1, len(img_name), img_name[j]))
         _, _, seg_out, mnt_o_out, mnt_w_out, mnt_h_out, mnt_s_out = main_net_model.predict(
             test[0])
-        mnt_gt = CoarseNet_utils.label2mnt(test[7], test[4], test[5], test[6])
+        mnt_gt = coarse_net_utils.label2mnt(test[7], test[4], test[5], test[6])
 
         original_image = test[0].copy()
 
@@ -416,11 +415,11 @@ def evaluate_training(model_dir, test_set, logging=None, finenet_path=None):
 
         # In cases of small amount of minutiae given, try adaptive threshold
         while final_minutiae_score_threashold >= 0:
-            mnt = CoarseNet_utils.label2mnt(
+            mnt = coarse_net_utils.label2mnt(
                 mnt_s_out, mnt_w_out, mnt_h_out, mnt_o_out, thresh=early_minutiae_thres)
             # Previous exp: 0.2
-            mnt_nms_1 = MinutiaeNet_utils.py_cpu_nms(mnt, 0.5)
-            mnt_nms_2 = MinutiaeNet_utils.nms(mnt)
+            mnt_nms_1 = minutiae_net_utils.py_cpu_nms(mnt, 0.5)
+            mnt_nms_2 = minutiae_net_utils.nms(mnt)
             # Make sure good result is given
             if mnt_nms_1.shape[0] > 4 and mnt_nms_2.shape[0] > 4:
                 break
@@ -428,7 +427,7 @@ def evaluate_training(model_dir, test_set, logging=None, finenet_path=None):
                 final_minutiae_score_threashold = final_minutiae_score_threashold - 0.05
                 early_minutiae_thres = early_minutiae_thres - 0.05
 
-        mnt_nms = MinutiaeNet_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
+        mnt_nms = minutiae_net_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
 
         mnt_nms = mnt_nms[mnt_nms[:, 3] > early_minutiae_thres, :]
         mnt_refined = []
@@ -485,9 +484,9 @@ def evaluate_training(model_dir, test_set, logging=None, finenet_path=None):
         if mnt_nms.shape[0] > 0:
             mnt_nms = mnt_nms[mnt_nms[:, 3] > final_minutiae_score_threashold, :]
 
-        p, r, f, l, o = MinutiaeNet_utils.metric_p_r_f(mnt_gt, mnt_nms, 16, np.pi/6)
+        p, r, f, l, o = minutiae_net_utils.metric_p_r_f(mnt_gt, mnt_nms, 16, np.pi/6)
         ave_prf_nms.append([p, r, f, l, o])
-        p, r, f, l, o = MinutiaeNet_utils.metric_p_r_f(mnt_gt, mnt_nms, 16, np.pi)
+        p, r, f, l, o = minutiae_net_utils.metric_p_r_f(mnt_gt, mnt_nms, 16, np.pi)
         ave_prf_nms_location.append([p, r, f, l, o])
 
     logging.info("Average testing results:")
@@ -501,7 +500,8 @@ def evaluate_training(model_dir, test_set, logging=None, finenet_path=None):
         ave_prf_nms[3],
         ave_prf_nms[4])
 
-    return ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2], ave_prf_nms_location[0], ave_prf_nms_location[1], ave_prf_nms_location[2]
+    return (ave_prf_nms[0], ave_prf_nms[1], ave_prf_nms[2],
+            ave_prf_nms_location[0], ave_prf_nms_location[1], ave_prf_nms_location[2])
 
 
 def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
@@ -678,30 +678,30 @@ def fuse_minu_orientation(dir_map, mnt, mode=1, block_size=16):
         return
 
 
-def deploy_with_GT(
+def deploy_with_gt(
         deploy_set, output_dir, model_path, finenet_path=None, set_name=None, logging=None):
     if set_name is None:
         set_name = deploy_set.split('/')[-2]
 
     # Read image and GT
-    img_name, folder_name, img_size = CoarseNet_utils.get_maximum_img_size_and_names(deploy_set)
+    img_name, folder_name, img_size = coarse_net_utils.get_maximum_img_size_and_names(deploy_set)
 
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/')
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/mnt_results/')
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/seg_results/')
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/OF_results/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/mnt_results/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/seg_results/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/OF_results/')
 
     logging.info("Predicting %s:", set_name)
 
     is_having_finenet = False
 
-    main_net_model = CoarseNetmodel((None, None, 1), model_path, mode='deploy')
+    main_net_model = get_coarse_net_model((None, None, 1), model_path, mode='deploy')
 
     if is_having_finenet is True:
         # ====== Load FineNet to verify
-        model_finenet = FineNet_model.get_fine_net_model(num_classes=2,
-                                                         pretrained_path=finenet_path,
-                                                         input_shape=(224, 224, 3))
+        model_finenet = fine_net_model.get_fine_net_model(num_classes=2,
+                                                          pretrained_path=finenet_path,
+                                                          input_shape=(224, 224, 3))
 
         model_finenet.compile(loss='categorical_crossentropy',
                               optimizer=optimizers.Adam(lr=0),
@@ -710,9 +710,9 @@ def deploy_with_GT(
     time_c = []
     ave_prf_nms = []
     for i, test in enumerate(
-        CoarseNet_utils.load_data(
+        coarse_net_utils.load_data(
             (img_name, folder_name, img_size),
-            CoarseNet_utils.get_tra_ori(), rand=False, aug=0.0, batch_size=1)):
+            coarse_net_utils.get_tra_ori(), rand=False, aug=0.0, batch_size=1)):
 
         print(i, img_name[i])
         logging.info("%s %d / %d: %s", set_name, i + 1, len(img_name), img_name[i])
@@ -731,8 +731,8 @@ def deploy_with_GT(
         original_image = image.copy()
 
         # Generate OF
-        texture_img = MinutiaeNet_utils.fast_enhance_texture(image, sigma=2.5, show=False)
-        dir_map, _ = MinutiaeNet_utils.get_maps_stft(
+        texture_img = minutiae_net_utils.fast_enhance_texture(image, sigma=2.5, show=False)
+        dir_map, _ = minutiae_net_utils.get_maps_stft(
             texture_img, patch_size=64, block_size=16, preprocess=True)
 
         image = np.reshape(image, [1, image.shape[0], image.shape[1], 1])
@@ -755,20 +755,20 @@ def deploy_with_GT(
         # If use mask from outside
         # seg_out = cv2.resize(mask, dsize=(seg_out.shape[1], seg_out.shape[0]))
 
-        mnt_gt = CoarseNet_utils.label2mnt(test[7], test[4], test[5], test[6])
+        mnt_gt = coarse_net_utils.label2mnt(test[7], test[4], test[5], test[6])
 
         final_minutiae_score_threashold = 0.45
         early_minutiae_thres = final_minutiae_score_threashold + 0.05
 
         # In cases of small amount of minutiae given, try adaptive threshold
         while final_minutiae_score_threashold >= 0:
-            mnt = CoarseNet_utils.label2mnt(
+            mnt = coarse_net_utils.label2mnt(
                 np.squeeze(mnt_s_out) * np.round(np.squeeze(seg_out)),
                 mnt_w_out, mnt_h_out, mnt_o_out, thresh=early_minutiae_thres)
 
             # Previous exp: 0.2
-            mnt_nms_1 = MinutiaeNet_utils.py_cpu_nms(mnt, 0.5)
-            mnt_nms_2 = MinutiaeNet_utils.nms(mnt)
+            mnt_nms_1 = minutiae_net_utils.py_cpu_nms(mnt, 0.5)
+            mnt_nms_2 = minutiae_net_utils.nms(mnt)
             # Make sure good result is given
             if mnt_nms_1.shape[0] > 4 and mnt_nms_2.shape[0] > 4:
                 break
@@ -776,7 +776,7 @@ def deploy_with_GT(
                 final_minutiae_score_threashold = final_minutiae_score_threashold - 0.05
                 early_minutiae_thres = early_minutiae_thres - 0.05
 
-        mnt_nms = MinutiaeNet_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
+        mnt_nms = minutiae_net_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
 
         mnt_nms = mnt_nms[mnt_nms[:, 3] > early_minutiae_thres, :]
         mnt_refined = []
@@ -836,16 +836,16 @@ def deploy_with_GT(
         final_mask = ndimage.zoom(np.round(np.squeeze(seg_out)), [8, 8], order=0)
 
         # Show the orientation
-        MinutiaeNet_utils.show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
-                                                 fname="%s/%s/OF_results/%s_OF.jpg" %
-                                                 (output_dir, set_name, img_name[i]))
+        minutiae_net_utils.show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
+                                                  fname="%s/%s/OF_results/%s_OF.jpg" %
+                                                  (output_dir, set_name, img_name[i]))
 
         fuse_minu_orientation(dir_map, mnt_nms, mode=3)
 
         time_afterpost = time()
-        MinutiaeNet_utils.mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt" %
-                                     (output_dir, set_name, img_name[i]))
-        MinutiaeNet_utils.draw_minutiae_overlay_with_score(
+        minutiae_net_utils.mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt" %
+                                      (output_dir, set_name, img_name[i]))
+        minutiae_net_utils.draw_minutiae_overlay_with_score(
             image, mnt_nms, mnt_gt[:, : 3],
             "%s/%s/%s_minu.jpg" % (output_dir, set_name, img_name[i]),
             saveimage=True)
@@ -861,7 +861,7 @@ def deploy_with_GT(
                      time_c[-1][0], time_c[-1][1], time_c[-1][2])
 
         # Metrics calculating
-        p, r, f, l, o = MinutiaeNet_utils.metric_p_r_f(mnt_gt, mnt_nms)
+        p, r, f, l, o = minutiae_net_utils.metric_p_r_f(mnt_gt, mnt_nms)
         ave_prf_nms.append([p, r, f, l, o])
         print(p, r, f)
 
@@ -881,21 +881,21 @@ def inference(
     if set_name is None:
         set_name = deploy_set.split('/')[-2]
 
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/')
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/mnt_results/')
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/seg_results/')
-    MinutiaeNet_utils.mkdir(output_dir + '/' + set_name + '/OF_results/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/mnt_results/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/seg_results/')
+    minutiae_net_utils.mkdir(output_dir + '/' + set_name + '/OF_results/')
 
     logging.info("Predicting %s:", set_name)
 
-    _, img_name = MinutiaeNet_utils.get_files_in_folder(deploy_set + 'img_files/', file_ext)
+    _, img_name = minutiae_net_utils.get_files_in_folder(deploy_set + 'img_files/', file_ext)
     print(deploy_set)
 
     # ====== Load FineNet to verify
     if is_having_finenet is True:
-        model_finenet = FineNet_model.get_fine_net_model(num_classes=2,
-                                                         pretrained_path=finenet_path,
-                                                         input_shape=(224, 224, 3))
+        model_finenet = fine_net_model.get_fine_net_model(num_classes=2,
+                                                          pretrained_path=finenet_path,
+                                                          input_shape=(224, 224, 3))
 
         model_finenet.compile(loss='categorical_crossentropy',
                               optimizer=optimizers.Adam(lr=0),
@@ -903,7 +903,7 @@ def inference(
 
     time_c = []
 
-    main_net_model = CoarseNetmodel((None, None, 1), model_path, mode='deploy')
+    main_net_model = get_coarse_net_model((None, None, 1), model_path, mode='deploy')
 
     for i in enumerate(img_name):
         print(i)
@@ -927,8 +927,8 @@ def inference(
 
         original_image = image.copy()
 
-        texture_img = MinutiaeNet_utils.fast_enhance_texture(image, sigma=2.5, show=False)
-        dir_map, _ = MinutiaeNet_utils.get_maps_stft(
+        texture_img = minutiae_net_utils.fast_enhance_texture(image, sigma=2.5, show=False)
+        dir_map, _ = minutiae_net_utils.get_maps_stft(
             texture_img, patch_size=64, block_size=16, preprocess=True)
 
         image = image*mask
@@ -961,12 +961,12 @@ def inference(
         early_minutiae_thres = 0.5
 
         # New adaptive threshold
-        mnt = CoarseNet_utils.label2mnt(np.squeeze(mnt_s_out) * np.round(np.squeeze(seg_out)),
-                                        mnt_w_out, mnt_h_out, mnt_o_out, thresh=0)
+        mnt = coarse_net_utils.label2mnt(np.squeeze(mnt_s_out) * np.round(np.squeeze(seg_out)),
+                                         mnt_w_out, mnt_h_out, mnt_o_out, thresh=0)
 
         # Previous exp: 0.2
-        mnt_nms_1 = MinutiaeNet_utils.py_cpu_nms(mnt, 0.5)
-        mnt_nms_2 = MinutiaeNet_utils.nms(mnt)
+        mnt_nms_1 = minutiae_net_utils.py_cpu_nms(mnt, 0.5)
+        mnt_nms_2 = minutiae_net_utils.nms(mnt)
         mnt_nms_1.view('f8,f8,f8,f8').sort(order=['f3'], axis=0)
         mnt_nms_1 = mnt_nms_1[::-1]
 
@@ -988,7 +988,7 @@ def inference(
 
             early_minutiae_thres = early_minutiae_thres - 0.05
 
-        mnt_nms = MinutiaeNet_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
+        mnt_nms = minutiae_net_utils.fuse_nms(mnt_nms_1, mnt_nms_2)
 
         final_minutiae_score_threashold = early_minutiae_thres - 0.05
 
@@ -1050,17 +1050,17 @@ def inference(
 
         final_mask = ndimage.zoom(np.round(np.squeeze(seg_out)), [8, 8], order=0)
         # Show the orientation
-        MinutiaeNet_utils.show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
-                                                 fname="%s/%s/OF_results/%s_OF.jpg" %
-                                                 (output_dir, set_name, img_name[i]))
+        minutiae_net_utils.show_orientation_field(original_image, dir_map + np.pi, mask=final_mask,
+                                                  fname="%s/%s/OF_results/%s_OF.jpg" %
+                                                  (output_dir, set_name, img_name[i]))
 
         fuse_minu_orientation(dir_map, mnt_nms, mode=3)
 
         time_afterpost = time()
-        MinutiaeNet_utils.mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt" %
-                                     (output_dir, set_name, img_name[i]))
-        MinutiaeNet_utils.draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg" %
-                                        (output_dir, set_name, img_name[i]), save_image=True)
+        minutiae_net_utils.mnt_writer(mnt_nms, img_name[i], img_size, "%s/%s/mnt_results/%s.mnt" %
+                                      (output_dir, set_name, img_name[i]))
+        minutiae_net_utils.draw_minutiae(original_image, mnt_nms, "%s/%s/%s_minu.jpg" %
+                                         (output_dir, set_name, img_name[i]), save_image=True)
         cv2.imwrite("%s/%s/seg_results/%s_seg.jpg" %
                     (output_dir, set_name, img_name[i]), final_mask)
         time_afterdraw = time()
