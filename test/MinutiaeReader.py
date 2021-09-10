@@ -73,7 +73,8 @@ class MinutiaeData:
         self.quality = quality
 
     def print_data(self):
-        print(("X: ", self.xPosition, " Y: ", self.yPosition, " theta: ", self.theta, " quality: ", self.quality))
+        print(("X: ", self.xPosition, " Y: ", self.yPosition,
+              " theta: ", self.theta, " quality: ", self.quality))
 
 
 class MinutiaeReader:

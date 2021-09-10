@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 import sys
 import math
-from test_python3 import get_extracted_minutiae
+from eval_python3 import get_extracted_minutiae
 
 # sys.path.append(os.path.realpath('../logic/'))
 
@@ -232,7 +232,7 @@ sum_25_correctly_extracted_angle = 0
 sum_25_incorrectly_extracted_angle = 0
 sum_25_correctly_extracted_from_manually_extracted_angle = 0
 sum_25_not_extracted_from_manually_extracted_angle = 0
-print("jazda")
+
 minutiae_reader = MinutiaeReader()
 manually_extracted = minutiae_reader.get_extracted_minutiae_data(
     manually_extracted_path)

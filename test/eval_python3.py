@@ -6,8 +6,6 @@ import numpy as np
 from CoarseNet import minutiae_net_utils, coarse_net_utils, coarse_net_model
 from FineNet import fine_net_model
 
-print("skap testovacka")
-
 coarse_net = coarse_net_model.get_coarse_net_model(
     (None, None, 1),
     '/home/jakub/projects/bp/minutiae_classificator/models/CoarseNet.h5', mode='deploy')
@@ -115,7 +113,7 @@ def extract_minutiae(image, original_image):
     mnt_nms = mnt_nms[mnt_nms[:, 3] > early_minutiae_thres, :]
 
     mnt_refined = []
-    print("ideme na fine net")
+
     # ======= Verify using FineNet ============
     for idx_minu in range(mnt_nms.shape[0]):
         try:
