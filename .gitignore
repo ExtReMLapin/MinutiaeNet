@@ -136,3 +136,6 @@ dmypy.json
 
 /output_CoarseNet
 /testData
+
+# TEMPORARY RULES
+compared_with_fm3*.txt
