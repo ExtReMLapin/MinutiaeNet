@@ -19,7 +19,8 @@ import numpy as np
 from scipy import ndimage
 from tensorflow.keras import layers, models, regularizers, optimizers, utils
 
-from FineNet import fine_net_model
+# using as submodule
+from ..FineNet import fine_net_model
 from . import coarse_net_utils, minutiae_net_utils, loss_functions
 
 
