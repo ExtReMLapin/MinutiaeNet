@@ -100,7 +100,9 @@ def inception_resnet_block(x, scale, block_type, block_idx, activation='relu'):
     return x
 
 
-def get_fine_net_model(num_classes=2, pretrained_path=None, input_shape=None):
+def get_fine_net_model(
+        num_classes=2, pretrained_path=None, input_shape=None, name="FineNet",
+        output_layer_name="predictions"):
     """Create FineNet architecture.
 
     """
@@ -189,16 +191,16 @@ def get_fine_net_model(num_classes=2, pretrained_path=None, input_shape=None):
 
     # Classification block
     x = layers.GlobalAveragePooling2D(name='avg_pool')(x)
-    x = layers.Dense(num_classes, activation='softmax', name='predictions')(x)
+    x = layers.Dense(num_classes, activation='softmax', name=output_layer_name)(x)
 
     inputs = img_input
 
     # Create model
-    model = models.Model(inputs, x, name='FineNet')
+    model = models.Model(inputs, x, name)
 
     # Load weights
     if pretrained_path is not None:
-        print('Loading FineNet weights from %s' % (pretrained_path))
+        print(f"Loading {name} weights from {pretrained_path}")
         model.load_weights(pretrained_path)
 
     return model
