@@ -196,7 +196,7 @@ def get_fine_net_model(
     inputs = img_input
 
     # Create model
-    model = models.Model(inputs, x, name)
+    model = models.Model(inputs, x, name=name)
 
     # Load weights
     if pretrained_path is not None:
