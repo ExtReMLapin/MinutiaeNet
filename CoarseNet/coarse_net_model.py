@@ -968,7 +968,7 @@ def inference(
         # Previous exp: 0.2
         mnt_nms_1 = minutiae_net_utils.py_cpu_nms(mnt, 0.5)
         mnt_nms_2 = minutiae_net_utils.nms(mnt)
-        mnt_nms_1.view('f8,f8,f8,f8').sort(order=['f3'], axis=0)
+        mnt_nms_1.view("f8,f8,f8,f8,f8").sort(order=["f3"], axis=0)
         mnt_nms_1 = mnt_nms_1[::-1]
 
         mnt_nms_1_copy = mnt_nms_1.copy()
