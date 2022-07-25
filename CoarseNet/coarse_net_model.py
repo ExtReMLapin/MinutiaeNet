@@ -906,7 +906,7 @@ def inference(
 
     main_net_model = get_coarse_net_model((None, None, 1), model_path, mode='deploy')
 
-    for i in enumerate(img_name):
+    for i in range(len(img_name)):
         print(i)
 
         image = cv2.imread(
