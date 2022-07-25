@@ -57,7 +57,7 @@ If you find MinutiaeNet useful in your research, please citing:
 # Installation
 To make life easier, I suggest to use Anaconda for easy installation. Version using pip is similar.
   ```Shell
-  conda install cv2, numpy, scipy, matplotlib, pydot, graphviz
+  conda install cv2, numpy, scipy, matplotlib==2.2.5, pydot, graphviz
   ```
 Download models and put into `Models` folder.
 - **CoarseNet**: [Googledrive](https://drive.google.com/file/d/1alvw_kAyY4sxdzAkGABQR7waux-rgJKm/view?usp=sharing)    ||    [Dropbox](https://www.dropbox.com/s/gppil4wybdjcihy/CoarseNet.h5?dl=0)
